@@ -1,0 +1,1267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Reach — Stretch Session Builder</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#F3F2E8;
+    --bg-alt:#EAEEDF;
+    --paper:#FBFAF4;
+    --ink:#20301E;
+    --ink-soft:#55614C;
+    --ink-faint:#8B9483;
+    --moss:#3E5A38;
+    --moss-dark:#2A3F26;
+    --moss-deep:#1D2E1B;
+    --sage:#9EB48F;
+    --sage-light:#DCE6CC;
+    --sage-pale:#EEF2E2;
+    --line:#D8D9C9;
+    --amber:#C89A4C;
+    --white:#FFFFFF;
+    --radius:14px;
+    --shadow:0 1px 2px rgba(32,48,30,0.06), 0 4px 14px rgba(32,48,30,0.06);
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--bg);
+    color:var(--ink);
+    font-family:'Inter',system-ui,sans-serif;
+    -webkit-font-smoothing:antialiased;
+    padding-bottom:110px;
+  }
+  h1,h2,h3,.serif{font-family:'Fraunces',serif;}
+  a{color:inherit;}
+  button{font-family:inherit;cursor:pointer;}
+
+  /* ---------- Header ---------- */
+  header.top{
+    padding:28px 20px 18px;
+    max-width:920px;
+    margin:0 auto;
+  }
+  .brand{
+    display:flex;
+    align-items:baseline;
+    gap:12px;
+  }
+  .brand .mark{
+    width:34px;height:34px;
+    border-radius:9px;
+    background:linear-gradient(155deg,var(--moss),var(--moss-dark));
+    display:flex;align-items:center;justify-content:center;
+    flex-shrink:0;
+  }
+  .brand .mark svg{width:18px;height:18px;}
+  .brand h1{
+    font-size:26px;
+    font-weight:600;
+    margin:0;
+    color:var(--moss-deep);
+    letter-spacing:-0.01em;
+  }
+  header.top p.tagline{
+    margin:8px 0 0;
+    color:var(--ink-soft);
+    font-size:14.5px;
+    max-width:46ch;
+    line-height:1.5;
+  }
+
+  nav.tabs{
+    display:flex;
+    gap:6px;
+    max-width:920px;
+    margin:18px auto 0;
+    padding:0 20px;
+  }
+  nav.tabs button{
+    background:none;border:none;
+    font-size:14.5px;
+    font-weight:600;
+    color:var(--ink-faint);
+    padding:10px 4px;
+    border-bottom:2px solid transparent;
+    margin-right:18px;
+  }
+  nav.tabs button.active{
+    color:var(--moss-deep);
+    border-bottom-color:var(--moss);
+  }
+
+  main{
+    max-width:920px;
+    margin:0 auto;
+    padding:8px 20px 40px;
+  }
+
+  /* ---------- Area sections ---------- */
+  .area-section{margin-top:30px;}
+  .area-head{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    margin-bottom:12px;
+  }
+  .area-head h2{
+    font-size:19px;
+    font-weight:600;
+    margin:0;
+    color:var(--moss-deep);
+  }
+  .area-head .count{
+    font-size:12.5px;
+    color:var(--ink-faint);
+    background:var(--sage-pale);
+    padding:2px 9px;
+    border-radius:20px;
+  }
+
+  .card-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fill,minmax(270px,1fr));
+    gap:12px;
+  }
+
+  .stretch-card{
+    background:var(--paper);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    padding:14px 15px 13px;
+    transition:border-color .15s ease, box-shadow .15s ease;
+  }
+  .stretch-card.selected{
+    border-color:var(--moss);
+    box-shadow:0 0 0 1px var(--moss) inset;
+    background:var(--sage-pale);
+  }
+  .stretch-card .row-top{
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-start;
+    gap:8px;
+  }
+  .stretch-card h3{
+    font-size:15.5px;
+    font-weight:600;
+    margin:0 0 3px;
+    line-height:1.3;
+    color:var(--ink);
+    font-family:'Inter',sans-serif;
+  }
+  .stretch-card .muscles{
+    font-size:12.5px;
+    color:var(--ink-faint);
+    line-height:1.4;
+    margin:0;
+  }
+  .info-btn{
+    background:var(--sage-pale);
+    border:1px solid var(--line);
+    width:26px;height:26px;
+    border-radius:50%;
+    flex-shrink:0;
+    font-size:13px;
+    color:var(--moss-dark);
+    font-weight:700;
+    font-style:italic;
+    font-family:'Fraunces',serif;
+    display:flex;align-items:center;justify-content:center;
+  }
+  .info-btn:hover{background:var(--sage-light);}
+
+  .details{
+    margin-top:10px;
+    padding-top:10px;
+    border-top:1px dashed var(--line);
+    font-size:13px;
+    color:var(--ink-soft);
+    line-height:1.55;
+    display:none;
+  }
+  .details.open{display:block;}
+  .details h4{
+    font-size:11px;
+    text-transform:uppercase;
+    letter-spacing:.04em;
+    color:var(--moss);
+    margin:10px 0 4px;
+    font-family:'Inter',sans-serif;
+    font-weight:700;
+  }
+  .details h4:first-child{margin-top:0;}
+  .details ul{margin:0;padding-left:18px;}
+  .details li{margin-bottom:3px;}
+  .stretch-img-wrap{margin-top:12px;}
+  .stretch-img-wrap img{
+    width:100%;max-width:220px;display:block;margin:0 auto;
+    border-radius:10px;border:1px solid var(--line);
+  }
+  .stretch-img-note{
+    font-size:11px;color:var(--ink-faint);text-align:center;margin-top:5px;
+  }
+  .footer-attr{
+    max-width:920px;margin:30px auto 0;padding:0 20px 30px;
+    font-size:12px;color:var(--ink-faint);text-align:center;
+  }
+  .footer-attr a{color:var(--ink-soft);}
+
+  .dur-row{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    margin-top:11px;
+  }
+  .dur-row .label{
+    font-size:11.5px;
+    color:var(--ink-faint);
+    margin-right:2px;
+  }
+  .dur-chip{
+    border:1px solid var(--line);
+    background:var(--white);
+    color:var(--ink);
+    font-size:13px;
+    font-weight:600;
+    padding:6px 11px;
+    border-radius:20px;
+  }
+  .dur-chip:hover{border-color:var(--sage);}
+  .dur-chip.active{
+    background:var(--moss);
+    border-color:var(--moss);
+    color:var(--white);
+  }
+  .sides-tag{
+    font-size:11px;
+    color:var(--ink-faint);
+    margin-left:auto;
+  }
+
+  /* ---------- Session bar ---------- */
+  .session-bar{
+    position:fixed;
+    left:0;right:0;bottom:0;
+    background:var(--moss-deep);
+    color:var(--white);
+    z-index:40;
+    box-shadow:0 -6px 22px rgba(0,0,0,0.18);
+  }
+  .session-bar .row{
+    max-width:920px;
+    margin:0 auto;
+    padding:13px 20px;
+    display:flex;
+    align-items:center;
+    gap:14px;
+  }
+  .session-bar .totals{
+    flex:1;
+    min-width:0;
+  }
+  .session-bar .totals .n{
+    font-family:'Fraunces',serif;
+    font-size:20px;
+    font-weight:600;
+  }
+  .session-bar .totals .sub{
+    font-size:12px;
+    color:#B9C7AE;
+    margin-top:1px;
+  }
+  .session-bar button.ghost{
+    background:none;
+    border:1px solid rgba(255,255,255,0.3);
+    color:var(--white);
+    padding:9px 14px;
+    border-radius:24px;
+    font-size:13px;
+    font-weight:600;
+    white-space:nowrap;
+  }
+  .session-bar button.ghost:hover{border-color:rgba(255,255,255,0.6);}
+  .session-bar button.play{
+    background:var(--amber);
+    border:none;
+    color:var(--moss-deep);
+    padding:11px 20px;
+    border-radius:24px;
+    font-size:14px;
+    font-weight:700;
+    white-space:nowrap;
+  }
+  .session-bar button.play:disabled{opacity:.35;pointer-events:none;}
+
+  .session-drawer{
+    max-width:920px;
+    margin:0 auto;
+    padding:0 20px 14px;
+    display:none;
+  }
+  .session-drawer.open{display:block;}
+  .session-item{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding:9px 0;
+    border-top:1px solid rgba(255,255,255,0.12);
+    font-size:13.5px;
+  }
+  .session-item .dur{color:#B9C7AE;font-size:12.5px;margin-left:8px;}
+  .session-item button.remove{
+    background:none;border:none;color:#D9B8B0;
+    font-size:12.5px;font-weight:600;
+  }
+
+  /* ---------- Playlists tab ---------- */
+  .playlist-card{
+    background:var(--paper);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    padding:16px 17px;
+    margin-bottom:12px;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:12px;
+  }
+  .playlist-card h3{font-size:16px;margin:0 0 3px;}
+  .playlist-card .meta{font-size:12.5px;color:var(--ink-faint);}
+  .playlist-card .actions{display:flex;gap:8px;flex-shrink:0;}
+  .playlist-card button{
+    border:1px solid var(--line);
+    background:var(--white);
+    padding:8px 13px;
+    border-radius:20px;
+    font-size:13px;
+    font-weight:600;
+  }
+  .playlist-card button.load{border-color:var(--moss);color:var(--moss-dark);}
+  .playlist-card button.del{color:#A5493C;}
+  .playlist-card button.rename{color:var(--ink-soft);}
+  .playlist-card .name-edit{display:flex;gap:8px;align-items:center;flex:1;}
+  .playlist-card .name-edit input{
+    flex:1;font-family:'Fraunces',serif;font-size:16px;
+    border:1px solid var(--sage);border-radius:8px;padding:6px 9px;
+    background:var(--white);color:var(--ink);
+  }
+  .playlist-card .name-edit button{
+    border:none;background:var(--moss);color:var(--white);
+    padding:7px 12px;border-radius:16px;font-size:12.5px;font-weight:600;
+  }
+  .save-panel{
+    max-width:920px;margin:0 auto;padding:0 20px 14px;display:none;
+  }
+  .save-panel.open{display:block;}
+  .save-panel .box{
+    background:rgba(255,255,255,0.06);
+    border:1px solid rgba(255,255,255,0.15);
+    border-radius:12px;
+    padding:12px 14px;
+    display:flex;
+    gap:10px;
+    align-items:center;
+  }
+  .save-panel label{font-size:12.5px;color:#B9C7AE;white-space:nowrap;}
+  .save-panel input{
+    flex:1;
+    font-family:'Fraunces',serif;
+    font-size:16px;
+    border:none;
+    border-radius:8px;
+    padding:8px 10px;
+    background:var(--white);
+    color:var(--ink);
+  }
+  .save-panel button.confirm{
+    background:var(--amber);border:none;color:var(--moss-deep);
+    padding:9px 16px;border-radius:20px;font-weight:700;font-size:13px;white-space:nowrap;
+  }
+  .save-panel button.cancel{
+    background:none;border:none;color:#B9C7AE;font-size:13px;font-weight:600;
+  }
+  .empty-state{
+    text-align:center;
+    padding:60px 20px;
+    color:var(--ink-faint);
+    font-size:14.5px;
+  }
+
+  /* ---------- Play overlay ---------- */
+  .play-overlay{
+    position:fixed;inset:0;
+    background:linear-gradient(165deg,var(--moss-deep),#152412);
+    color:var(--white);
+    z-index:100;
+    display:none;
+    flex-direction:column;
+  }
+  .play-overlay.open{display:flex;}
+  .play-top{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    padding:20px 22px;
+  }
+  .play-top .progress-text{font-size:13px;color:var(--sage);letter-spacing:.02em;}
+  .play-top button.close{
+    background:rgba(255,255,255,0.08);
+    border:none;color:var(--white);
+    width:34px;height:34px;border-radius:50%;
+    font-size:16px;
+  }
+  .play-body{
+    flex:1;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    padding:20px 24px;
+    text-align:center;
+  }
+  .play-body .rest-tag{
+    font-size:13px;
+    text-transform:uppercase;
+    letter-spacing:.08em;
+    color:var(--amber);
+    font-weight:700;
+    margin-bottom:10px;
+  }
+  .play-body h2{
+    font-size:clamp(26px,5vw,40px);
+    font-weight:600;
+    margin:0 0 6px;
+    max-width:16ch;
+  }
+  .play-body .side-tag{
+    font-size:15px;
+    color:var(--sage);
+    margin-bottom:26px;
+    font-weight:600;
+  }
+  .timer-ring{
+    position:relative;
+    width:230px;height:230px;
+    margin:6px 0 26px;
+  }
+  .timer-ring svg{transform:rotate(-90deg);width:100%;height:100%;}
+  .timer-ring .bg-circle{stroke:rgba(255,255,255,0.1);}
+  .timer-ring .fg-circle{stroke:var(--amber);stroke-linecap:round;transition:stroke-dashoffset .25s linear;}
+  .timer-ring .time-label{
+    position:absolute;inset:0;
+    display:flex;align-items:center;justify-content:center;
+    font-family:'Fraunces',serif;
+    font-size:44px;
+    font-weight:600;
+  }
+  .play-body .up-next{
+    font-size:13.5px;
+    color:#A9B79E;
+    margin-top:2px;
+  }
+  .play-controls{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:16px;
+    padding:22px 24px 34px;
+  }
+  .play-controls button{
+    background:rgba(255,255,255,0.08);
+    border:none;color:var(--white);
+    border-radius:50%;
+    width:52px;height:52px;
+    font-size:18px;
+    display:flex;align-items:center;justify-content:center;
+  }
+  .play-controls button.big{
+    width:68px;height:68px;
+    background:var(--amber);
+    color:var(--moss-deep);
+    font-size:22px;
+  }
+  .play-info-btn{
+    position:absolute;
+    top:20px;left:22px;
+    background:rgba(255,255,255,0.08);
+    border:none;color:var(--white);
+    padding:8px 14px;
+    border-radius:20px;
+    font-size:12.5px;
+    font-weight:600;
+  }
+  .play-details-sheet{
+    position:fixed;
+    left:0;right:0;bottom:0;
+    background:var(--paper);
+    color:var(--ink);
+    border-radius:20px 20px 0 0;
+    max-height:70vh;
+    overflow-y:auto;
+    padding:22px 22px 30px;
+    z-index:110;
+    display:none;
+    box-shadow:0 -10px 30px rgba(0,0,0,0.3);
+  }
+  .play-details-sheet.open{display:block;}
+  .play-details-sheet h3{margin:0 0 12px;font-size:19px;}
+  .play-details-sheet h4{
+    font-size:11px;text-transform:uppercase;letter-spacing:.04em;
+    color:var(--moss);margin:14px 0 5px;font-weight:700;
+  }
+  .play-details-sheet ul{margin:0;padding-left:18px;font-size:13.5px;line-height:1.6;}
+  .sheet-close{
+    display:block;margin:18px auto 0;
+    background:var(--moss);color:var(--white);
+    border:none;padding:10px 22px;border-radius:20px;
+    font-weight:600;font-size:13.5px;
+  }
+  .scrim{
+    position:fixed;inset:0;background:rgba(0,0,0,0.35);
+    z-index:105;display:none;
+  }
+  .scrim.open{display:block;}
+
+  .complete-screen{text-align:center;}
+  .complete-screen .big-check{font-size:52px;margin-bottom:14px;}
+
+  @media (max-width:520px){
+    .card-grid{grid-template-columns:1fr;}
+    .timer-ring{width:190px;height:190px;}
+    .timer-ring .time-label{font-size:36px;}
+  }
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="brand">
+    <div class="mark">
+      <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M4 20C4 14 8 6 20 4C18 10 14 18 4 20Z" stroke="#EEF2E2" stroke-width="1.6" stroke-linejoin="round"/>
+      </svg>
+    </div>
+    <h1>Reach</h1>
+  </div>
+  <p class="tagline">Build a stretching session from 31 static stretches, then follow along with timed holds and a quiet drum cue between each one.</p>
+</header>
+
+<nav class="tabs">
+  <button class="active" data-tab="build">Build a session</button>
+  <button data-tab="playlists">My playlists</button>
+</nav>
+
+<main id="build-tab"></main>
+<main id="playlists-tab" style="display:none;"></main>
+
+<div class="session-bar" id="sessionBar" style="display:none;">
+  <div class="session-drawer" id="sessionDrawer"></div>
+  <div class="save-panel" id="savePanel">
+    <div class="box">
+      <label>Playlist name</label>
+      <input type="text" id="savePanelInput">
+      <button class="confirm" id="savePanelConfirm">Save</button>
+      <button class="cancel" id="savePanelCancel">Cancel</button>
+    </div>
+  </div>
+  <div class="row">
+    <div class="totals">
+      <div class="n" id="sessionTotal">0 min</div>
+      <div class="sub" id="sessionSub">0 stretches selected</div>
+    </div>
+    <button class="ghost" id="toggleDrawerBtn">Review</button>
+    <button class="ghost" id="saveBtn">Save</button>
+    <button class="play" id="playBtn">▶ Play</button>
+  </div>
+</div>
+
+<!-- Play overlay -->
+<div class="play-overlay" id="playOverlay">
+  <div class="play-top">
+    <span class="progress-text" id="progressText">Stretch 1 of 8</span>
+    <button class="close" id="exitPlayBtn">✕</button>
+  </div>
+  <div class="play-body" id="playBody">
+    <button class="play-info-btn" id="playInfoBtn" style="display:none;">Stretch details</button>
+    <div class="rest-tag" id="restTag" style="display:none;">Rest</div>
+    <h2 id="playStretchName">Get ready</h2>
+    <div class="side-tag" id="playSideTag"></div>
+    <div class="timer-ring">
+      <svg viewBox="0 0 100 100">
+        <circle class="bg-circle" cx="50" cy="50" r="44" fill="none" stroke-width="6"/>
+        <circle class="fg-circle" id="fgCircle" cx="50" cy="50" r="44" fill="none" stroke-width="6" stroke-dasharray="276.5" stroke-dashoffset="0"/>
+      </svg>
+      <div class="time-label" id="timeLabel">0:00</div>
+    </div>
+    <div class="up-next" id="upNext"></div>
+  </div>
+  <div class="play-controls" id="playControls">
+    <button id="skipBackBtn" title="Restart segment">⟲</button>
+    <button class="big" id="pauseBtn">❚❚</button>
+    <button id="skipFwdBtn" title="Skip">⏭</button>
+  </div>
+</div>
+<div class="scrim" id="scrim"></div>
+<div class="play-details-sheet" id="detailsSheet"></div>
+
+<div class="footer-attr">Exercise illustrations by <a href="https://repdb.co" target="_blank" rel="noopener">RepDB (repdb.co)</a></div>
+
+<script>
+/* ============ DATA ============ */
+const STRETCHES = [
+{id:1,name:"Lunge with Spinal Twist",area:"Hips & Glutes",sides:true,
+ muscles:["Hip flexor (back leg)","Glutes","Quadriceps","Thoracic spine","External hip rotators"],
+ benefits:"Improves hip opening, increases thoracic rotation, eases posture-related pain from sitting, supports range of motion for athletic movement.",
+ how:["Stand with feet together.","Step one foot forward into a deep lunge, front knee bent, back leg straight with toes on the floor.","Place the back-side hand on the floor and rotate your torso toward the front leg, reaching the other arm toward the ceiling.","Hold, then switch sides."]},
+{id:2,name:"Forward Fold Hamstring Stretch",area:"Hamstrings & Legs",sides:false,
+ muscles:["Hamstrings","Calves","Glutes","Lower back and neck"],
+ benefits:"Releases tension along the posterior chain, improves flexibility for bending and lifting, preps muscles for running or lower body training.",
+ how:["Stand feet hip-width apart with a slight bend in the knees.","Hinge from the hips and fold forward, reaching hands to the floor or around the legs.","Keep a gentle knee bend to protect the back.","Hold, then roll up slowly, vertebra by vertebra."]},
+{id:3,name:"Piriformis Stretch",area:"Hips & Glutes",sides:true,
+ muscles:["Piriformis","Gluteus medius","External hip rotators"],
+ benefits:"Reduces pressure on the sciatic nerve, prevents or relieves sciatica symptoms, improves hip rotation and pelvic comfort.",
+ how:["Sit with legs extended.","Cross one leg over the other, foot flat on the floor.","Place the same-side hand behind you and use the other hand or elbow on the bent knee to rotate and press it across.","Hold, then switch sides."]},
+{id:4,name:"Toes on Wall Calf Stretch",area:"Hamstrings & Legs",sides:true,
+ muscles:["Gastrocnemius","Soleus","Achilles tendon and ankle joint tissues"],
+ benefits:"Increases ankle dorsiflexion, reduces calf tightness, supports better foot positioning for running, walking, and squats.",
+ how:["Face a wall in a staggered stance with the front foot close to the wall.","Place toes of the front foot against the wall, heel on the floor.","Press weight into the front foot and lean forward to intensify.","Hold, then switch sides."]},
+{id:5,name:"Triceps Stretch",area:"Arms & Wrists",sides:true,
+ muscles:["Triceps brachii","Posterior shoulder and upper neck"],
+ benefits:"Improves overhead mobility, relieves tightness after pushing movements, enhances range of motion for presses and daily tasks.",
+ how:["Stand or sit tall.","Raise one arm overhead, bend the elbow so the hand reaches the middle of the upper back.","Use the other hand to gently pull the elbow toward the head.","Hold, then switch arms."]},
+{id:6,name:"Standing Quad Stretch",area:"Hamstrings & Legs",sides:true,
+ muscles:["Quadriceps","Hip flexors and rectus femoris"],
+ benefits:"Restores quadriceps length after running or cycling, reduces knee strain, supports upright posture and stride mechanics.",
+ how:["Stand tall, bend one knee, and pull that foot toward the glutes with the same-side hand.","Keep knees close together and squeeze the glutes to deepen the stretch.","Hold, then switch sides.","Use a wall for balance if needed."]},
+{id:7,name:"Figure Four Stretch",area:"Hips & Glutes",sides:true,
+ muscles:["Piriformis","Gluteals","External rotators and lateral thigh structures"],
+ benefits:"Alleviates glute and sciatic tension, improves external hip rotation, offers a gentle option for low back and knee discomfort.",
+ how:["Lie on your back with feet flat.","Cross one ankle over the opposite quad.","Lift the standing leg and hug the back of the thigh toward your chest.","Hold, then switch sides."]},
+{id:8,name:"Hip Adductors Stretch",area:"Hips & Glutes",sides:true,
+ muscles:["Adductor group","Inner thigh","Pelvic stabilizers and medial hip tissues"],
+ benefits:"Enhances hip stability, supports lateral movements, reduces groin tightness that can limit squats and lunges.",
+ how:["Stand with feet wider than shoulder width.","Shift weight to one side, bend that knee and keep the other leg straight with hips level.","You should feel a stretch along the inside of the straight leg's thigh.","Hold, then repeat on the other side."]},
+{id:9,name:"Lying Pectoral Stretch",area:"Shoulders & Chest",sides:true,
+ muscles:["Pectoralis major and minor","Anterior shoulder and upper chest"],
+ benefits:"Improves posture, opens the chest after pressing work, reduces forward shoulder posture from desk work.",
+ how:["Lie on your stomach with arms extended in a T.","Push off the ground with one hand and bend the same knee to roll onto your side, feeling the stretch in the opposite chest.","Hold, then repeat on the other side."]},
+{id:10,name:"90/90 Stretch",area:"Hips & Glutes",sides:true,
+ muscles:["Hip external rotators","Internal rotators","Glutes and deep hip rotator group"],
+ benefits:"Trains both hip rotation patterns, improves functional mobility for sitting and athletic pivots, helps hip joint balance.",
+ how:["Sit with one knee bent at 90° in front and the other knee bent at 90° out to the side.","Keep the front-leg glute on the floor and try to lower the side-leg glute toward the floor.","Hold, then switch sides."]},
+{id:11,name:"Seated Shoulder Squeeze",area:"Shoulders & Chest",sides:false,
+ muscles:["Rhomboids","Middle trapezius","Posterior deltoids and chest"],
+ benefits:"Corrects rounded shoulder posture, relieves upper back tension, supports better breathing mechanics.",
+ how:["Sit with knees bent and feet flat.","Clasp hands behind your lower back, straighten arms and squeeze the shoulder blades together for 3 seconds, then release.","Repeat continuously for the set time."]},
+{id:12,name:"Lunging Hip Flexor Stretch",area:"Hips & Glutes",sides:true,
+ muscles:["Iliopsoas","Rectus femoris","Quadriceps and front hip tissues"],
+ benefits:"Improves hip extension, reduces anterior hip tightness from sitting, helps balance stride and pelvic alignment.",
+ how:["Kneel on one knee with the other foot planted ahead.","Lean forward and squeeze the kneeling-side glute to pull the hip down.","Hold, then switch sides."]},
+{id:13,name:"Kneeling Side Bend Stretch",area:"Back & Spine",sides:true,
+ muscles:["External and internal obliques","Intercostal muscles","Inner thigh and hip abductors"],
+ benefits:"Increases lateral trunk flexibility, eases rib cage and breath movement, restores length symmetry on the extended side.",
+ how:["Kneel with legs together, extend one leg to the side at a right angle.","Reach the same-side arm overhead and bend your torso to the opposite side, keeping hips square.","Hold, then switch sides."]},
+{id:14,name:"Lying Quad Stretch",area:"Hamstrings & Legs",sides:true,
+ muscles:["Quadriceps","Hip flexor attachments and rectus femoris"],
+ benefits:"Isolates quadriceps length without balance demands, reduces thigh tightness after running, protects the knee.",
+ how:["Lie on your side with the bottom leg straight.","Bend the top knee and bring the foot toward the glutes, holding the ankle with your hand.","Keep hips stable and avoid rocking.","Hold, then switch sides."]},
+{id:15,name:"Happy Baby Pose",area:"Hips & Glutes",sides:false,
+ muscles:["Hip external rotators","Inner thighs and adductors","Glutes","Lumbar region"],
+ benefits:"Opens the hips, loosens the pelvis, provides a soothing stretch that eases lower back tension.",
+ how:["Lie on your back with knees bent and feet flat, then lift your feet and grab the outer edges.","Gently pull your knees toward the floor outside your torso, or draw feet toward your chest, whichever feels best.","Keep your spine long on the floor and hold."]},
+{id:16,name:"Sphinx Pose",area:"Back & Spine",sides:false,
+ muscles:["Lower back extensors","Abdominal stabilizers","Chest (to a lesser degree)"],
+ benefits:"Provides controlled extension for the lumbar spine, supports spinal mobility, trains core engagement to protect the back.",
+ how:["Lie on your stomach and place forearms under the shoulders.","Press forearms to lift the chest, keeping hips and thighs grounded and spine long.","Hold, avoiding overextension."]},
+{id:17,name:"Extended Puppy Pose",area:"Back & Spine",sides:false,
+ muscles:["Thoracic spine","Latissimus dorsi","Shoulders and chest opening"],
+ benefits:"Lengthens the upper back and shoulder complex, reduces upper body stiffness, works well as a mobility drill.",
+ how:["Start on hands and knees.","Walk hands forward a few inches, curl toes under and push hips back halfway toward the heels.","Press through the palms to keep arms engaged.","Hold."]},
+{id:18,name:"Knee to Chest Stretch",area:"Back & Spine",sides:true,
+ muscles:["Glutes","Hamstrings near the hip","Lumbar tissues"],
+ benefits:"Relieves lower back tightness, reduces gluteal tension, aids recovery after heavy posterior chain work.",
+ how:["Lie on your back with legs extended.","Pull one knee into the chest, keeping the other leg long on the floor and lower back pressed down.","Hold, then switch sides."]},
+{id:19,name:"Reclined Spinal Twist",area:"Back & Spine",sides:true,
+ muscles:["Lumbar spine","Obliques","Gluteal muscles and rotational spinal tissues"],
+ benefits:"Restores trunk rotation, eases lower back stiffness, supports mobility for rotational tasks in sport and daily life.",
+ how:["Lie on your back and hug both knees to your chest.","Drop both knees to one side while keeping the chest facing up.","Keep knees and hips aligned.","Hold, then switch sides."]},
+{id:20,name:"Seated Neck Release",area:"Neck",sides:true,
+ muscles:["Upper trapezius","Levator scapulae and lateral neck muscles"],
+ benefits:"Reduces neck and shoulder tension from screen use, improves head position, supports upper spine alignment.",
+ how:["Sit or stand with upright posture.","Drop one ear toward the same-side shoulder and, if comfortable, apply gentle pressure with the hand to deepen the stretch.","Hold, then switch sides."]},
+{id:21,name:"Half Split Stretch",area:"Hamstrings & Legs",sides:true,
+ muscles:["Hamstrings","Calves and gluteals"],
+ benefits:"Increases posterior chain length, helps correct tight hamstrings that limit the hip hinge, supports running and lifting mechanics.",
+ how:["Kneel with one knee under the hip and the other leg extended forward with a flexed foot.","Walk hands along the front leg and fold over until you feel the stretch in the hamstring.","Bend the front knee slightly if needed.","Hold, then switch sides."]},
+{id:22,name:"Pretzel Stretch",area:"Back & Spine",sides:true,
+ muscles:["Bottom leg quadriceps","Top leg glute and hip flexor","Spinal rotators and chest"],
+ benefits:"Stretches multiple postural muscles at once, helps spinal mobility, offers efficient recovery work when time is limited.",
+ how:["Lie on your side and rest your head on your arm.","Bring the top knee toward the chest and drop it to the floor.","Bend the bottom knee and reach back to grab the bottom foot with the top hand.","Keep torso and legs aligned.","Hold, then switch sides."]},
+{id:23,name:"Reclining Bound Angle Pose",area:"Hips & Glutes",sides:false,
+ muscles:["Inner thighs","Groin and hip adductors"],
+ benefits:"Offers passive release for the pelvis and inner thighs, aids relaxation after intense workouts, supports flexibility gains over time.",
+ how:["Lie on your back and bring your feet together, allowing the knees to open out to the sides.","Use pillows under the knees for support if needed.","Hold."]},
+{id:24,name:"Chest and Shoulder Stretch",area:"Shoulders & Chest",sides:false,
+ muscles:["Pectorals","Anterior deltoids","Upper chest tissues"],
+ benefits:"Corrects forward shoulder posture, improves upper body extension, complements rowing and pulling work.",
+ how:["Sit or stand and clasp your hands behind your back with arms straight.","Lift the hands toward the ceiling only as far as comfortable.","Hold."]},
+{id:25,name:"Upper Back Stretch",area:"Back & Spine",sides:false,
+ muscles:["Thoracic spine","Rhomboids and upper back muscles"],
+ benefits:"Releases tightness between the shoulder blades, improves posture, increases movement for overhead and rotational tasks.",
+ how:["Clasp hands in front of you and round the upper back while pressing the arms away from the body.","Engage the abdominal muscles to support the movement.","Hold."]},
+{id:26,name:"Biceps Stretch",area:"Arms & Wrists",sides:false,
+ muscles:["Biceps brachii","Brachialis and anterior shoulder tissues"],
+ benefits:"Balances muscle length after pulling work, reduces anterior arm tightness, improves elbow and shoulder comfort.",
+ how:["Extend your arms to the sides, slightly behind your body, thumbs up.","Rotate thumbs down and back until they point behind you.","Hold."]},
+{id:27,name:"Shoulder Stretch Across Chest",area:"Shoulders & Chest",sides:true,
+ muscles:["Posterior deltoid","Rear shoulder","Upper back tissues"],
+ benefits:"Improves shoulder internal rotation and horizontal adduction, reduces stiffness after overhead work.",
+ how:["Bring one arm straight across the chest and use the other hand just above the elbow to gently pull it in.","Drop the shoulder down if needed to feel the stretch.","Hold, then switch sides."]},
+{id:28,name:"Cat Cow",area:"Back & Spine",sides:false,
+ muscles:["Entire spinal column","Back extensors","Abdominals","Neck muscles"],
+ benefits:"Restores spinal mobility, primes the nervous system for movement, pairs well with dynamic warm-up routines.",
+ how:["Start on hands and knees, hands under shoulders, knees under hips.","On an inhale, lift the chin, chest, and tail for extension.","On an exhale, tuck chin and tail while rounding the spine.","Keep alternating slowly for the set time."]},
+{id:29,name:"Kneeling Wrist Stretch",area:"Arms & Wrists",sides:true,
+ muscles:["Wrist flexors and extensors","Forearm muscles","Carpal joint tissues"],
+ benefits:"Reduces wrist tightness from pressing or desk work, improves wrist extension for weight-bearing and push-ups.",
+ how:["Kneel on hands and knees with fingers pointing forward.","Turn one hand so the fingertips point away from the center, and lean your body toward the fingertips.","Hold, then switch sides.","For more intensity, rotate the hand so fingers point toward the thigh."]},
+{id:30,name:"Reclined Hamstring Stretch",area:"Hamstrings & Legs",sides:true,
+ muscles:["Hamstrings","Calf muscles","Glute connection"],
+ benefits:"Allows precise control of intensity for hamstring flexibility, useful for recovery and improving hip hinge mechanics.",
+ how:["Lie on your back with legs straight and loop a strap (or towel) around one foot.","Hold the strap and raise the leg toward the ceiling, keeping the knee as straight as possible.","Hold, then switch sides."]},
+{id:31,name:"Standing Doorway Pectoral Stretch",area:"Shoulders & Chest",sides:true,
+ muscles:["Pectoralis major and minor","Anterior shoulder","Chest fascia"],
+ benefits:"Opens the chest at multiple angles, relieves rounded shoulder posture, supports breathing and overhead mobility.",
+ how:["Stand in a staggered stance and place one arm at shoulder height, palm and inner arm on a doorframe.","Lean forward through the open chest space, keeping the shoulder down.","Adjust hand height to target different fibers.","Hold, then switch sides."]}
+];
+
+const IMAGES = {
+  1:  {file:"images/low-lunge-main.webp", approx:true},
+  2:  {file:"images/standing-forward-fold-main.webp", approx:false},
+  4:  {file:"images/standing-calf-stretch-main.webp", approx:true},
+  5:  {file:"images/overhead-triceps-stretch-main.webp", approx:false},
+  6:  {file:"images/standing-quad-stretch-main.webp", approx:false},
+  7:  {file:"images/pigeon-stretch-main.webp", approx:true},
+  12: {file:"images/kneeling-hip-flexor-stretch-main.webp", approx:false},
+  13: {file:"images/standing-side-bend-main.webp", approx:true},
+  15: {file:"images/happy-baby-main.webp", approx:false},
+  16: {file:"images/sphinx-pose-main.webp", approx:false},
+  17: {file:"images/puppy-pose-main.webp", approx:false},
+  18: {file:"images/knee-to-chest-stretch-main.webp", approx:false},
+  19: {file:"images/supine-spinal-twist-main.webp", approx:false},
+  21: {file:"images/low-lunge-to-half-split-peak.webp", approx:true},
+  23: {file:"images/butterfly-stretch-main.webp", approx:true},
+  27: {file:"images/cross-body-shoulder-stretch-main.webp", approx:false},
+  28: {file:"images/cat-cow-main.webp", approx:false},
+  29: {file:"images/kneeling-wrist-stretch-main.webp", approx:false},
+  31: {file:"images/doorway-chest-stretch-main.webp", approx:false}
+};
+
+const AREA_ORDER = ["Hips & Glutes","Hamstrings & Legs","Back & Spine","Shoulders & Chest","Neck","Arms & Wrists"];
+const DURATIONS = [1,2,3];
+
+/* ============ STATE ============ */
+// selections: { [stretchId]: durationMinutes }
+let selections = {};
+
+/* ============ RENDER: BUILD TAB ============ */
+function renderBuildTab(){
+  const root = document.getElementById('build-tab');
+  root.innerHTML = '';
+  AREA_ORDER.forEach(area=>{
+    const items = STRETCHES.filter(s=>s.area===area);
+    if(!items.length) return;
+    const section = document.createElement('section');
+    section.className='area-section';
+    section.innerHTML = `<div class="area-head"><h2>${area}</h2><span class="count">${items.length}</span></div>`;
+    const grid = document.createElement('div');
+    grid.className='card-grid';
+    items.forEach(s=>grid.appendChild(renderCard(s)));
+    section.appendChild(grid);
+    root.appendChild(section);
+  });
+}
+
+function imageBlockHTML(s){
+  const img = IMAGES[s.id];
+  if(!img) return '';
+  return `<div class="stretch-img-wrap">
+    <img src="${img.file}" alt="${s.name} illustration" loading="lazy">
+    ${img.approx ? '<div class="stretch-img-note">Closest available reference pose — swap out if you\'d like an exact match</div>' : ''}
+  </div>`;
+}
+
+function renderCard(s){
+  const card = document.createElement('div');
+  card.className = 'stretch-card' + (selections[s.id] ? ' selected' : '');
+  card.dataset.id = s.id;
+
+  const chips = DURATIONS.map(d=>{
+    const active = selections[s.id]===d ? 'active' : '';
+    return `<button class="dur-chip ${active}" data-min="${d}">${d} min${s.sides ? '/side' : ''}</button>`;
+  }).join('');
+
+  card.innerHTML = `
+    <div class="row-top">
+      <div>
+        <h3>${s.name}</h3>
+        <p class="muscles">${s.muscles.slice(0,3).join(', ')}</p>
+      </div>
+      <button class="info-btn" aria-label="Details">i</button>
+    </div>
+    <div class="details">
+      <h4>How to do it</h4>
+      <ul>${s.how.map(x=>`<li>${x}</li>`).join('')}</ul>
+      <h4>Muscles targeted</h4>
+      <ul>${s.muscles.map(x=>`<li>${x}</li>`).join('')}</ul>
+      <h4>Key benefits</h4>
+      <ul><li>${s.benefits}</li></ul>
+      ${imageBlockHTML(s)}
+    </div>
+    <div class="dur-row">
+      <span class="label">Duration</span>
+      ${chips}
+      ${s.sides ? '<span class="sides-tag">both sides</span>' : '<span class="sides-tag">single hold</span>'}
+    </div>
+  `;
+
+  card.querySelector('.info-btn').addEventListener('click', ()=>{
+    card.querySelector('.details').classList.toggle('open');
+  });
+
+  card.querySelectorAll('.dur-chip').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      const min = parseInt(btn.dataset.min,10);
+      if(selections[s.id]===min){
+        delete selections[s.id];
+      } else {
+        selections[s.id]=min;
+      }
+      renderBuildTab();
+      renderSessionBar();
+    });
+  });
+
+  return card;
+}
+
+/* ============ SESSION BAR ============ */
+function sessionMinutes(){
+  return Object.entries(selections).reduce((sum,[id,min])=>{
+    const s = STRETCHES.find(x=>x.id==id);
+    return sum + min * (s.sides ? 2 : 1);
+  },0);
+}
+
+function renderSessionBar(){
+  const bar = document.getElementById('sessionBar');
+  const ids = Object.keys(selections);
+  if(ids.length===0){
+    bar.style.display='none';
+    document.getElementById('sessionDrawer').classList.remove('open');
+    return;
+  }
+  bar.style.display='block';
+  const mins = sessionMinutes();
+  document.getElementById('sessionTotal').textContent = `${mins} min`;
+  document.getElementById('sessionSub').textContent = `${ids.length} stretch${ids.length>1?'es':''} selected`;
+  document.getElementById('playBtn').disabled = false;
+
+  const drawer = document.getElementById('sessionDrawer');
+  drawer.innerHTML = ids.map(id=>{
+    const s = STRETCHES.find(x=>x.id==id);
+    const min = selections[id];
+    const total = min * (s.sides?2:1);
+    return `<div class="session-item">
+      <span>${s.name}<span class="dur">${min} min${s.sides?'/side · '+total+' min total':''}</span></span>
+      <button class="remove" data-id="${id}">Remove</button>
+    </div>`;
+  }).join('');
+  drawer.querySelectorAll('.remove').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      delete selections[btn.dataset.id];
+      renderBuildTab();
+      renderSessionBar();
+    });
+  });
+}
+
+document.getElementById('toggleDrawerBtn').addEventListener('click', ()=>{
+  document.getElementById('sessionDrawer').classList.toggle('open');
+});
+
+/* ============ TABS ============ */
+document.querySelectorAll('nav.tabs button').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    document.querySelectorAll('nav.tabs button').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    const tab = btn.dataset.tab;
+    document.getElementById('build-tab').style.display = tab==='build' ? 'block':'none';
+    document.getElementById('playlists-tab').style.display = tab==='playlists' ? 'block':'none';
+    if(tab==='playlists') renderPlaylistsTab();
+  });
+});
+
+/* ============ PLAYLISTS (localStorage) ============ */
+const STORAGE_KEY = 'reach_playlists_v1';
+function loadPlaylists(){
+  try{ return JSON.parse(localStorage.getItem(STORAGE_KEY)) || []; }
+  catch(e){ return []; }
+}
+function savePlaylists(list){
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
+}
+
+document.getElementById('saveBtn').addEventListener('click', ()=>{
+  if(Object.keys(selections).length===0) return;
+  const panel = document.getElementById('savePanel');
+  const input = document.getElementById('savePanelInput');
+  input.value = `${sessionMinutes()} min`;
+  panel.classList.add('open');
+  document.getElementById('sessionDrawer').classList.remove('open');
+  input.focus();
+  input.select();
+});
+
+document.getElementById('savePanelCancel').addEventListener('click', ()=>{
+  document.getElementById('savePanel').classList.remove('open');
+});
+
+function confirmSave(){
+  const input = document.getElementById('savePanelInput');
+  const name = input.value.trim() || `${sessionMinutes()} min`;
+  const list = loadPlaylists();
+  list.push({
+    id: Date.now().toString(),
+    name,
+    createdAt: new Date().toISOString(),
+    items: {...selections}
+  });
+  savePlaylists(list);
+  document.getElementById('savePanel').classList.remove('open');
+  const savedLabel = document.getElementById('sessionSub');
+  const original = savedLabel.textContent;
+  savedLabel.textContent = `Saved as "${name}"`;
+  setTimeout(()=>{ savedLabel.textContent = original; }, 2200);
+}
+document.getElementById('savePanelConfirm').addEventListener('click', confirmSave);
+document.getElementById('savePanelInput').addEventListener('keydown', (e)=>{
+  if(e.key==='Enter') confirmSave();
+});
+
+function renderPlaylistsTab(){
+  const root = document.getElementById('playlists-tab');
+  const list = loadPlaylists();
+  if(list.length===0){
+    root.innerHTML = `<div class="empty-state">No saved playlists yet.<br>Build a session and hit Save.</div>`;
+    return;
+  }
+  root.innerHTML = list.slice().reverse().map(p=>{
+    const mins = Object.entries(p.items).reduce((sum,[id,min])=>{
+      const s = STRETCHES.find(x=>x.id==id);
+      return sum + min*(s.sides?2:1);
+    },0);
+    return `<div class="playlist-card" data-id="${p.id}">
+      <div class="title-area">
+        <h3>${p.name}</h3>
+        <div class="meta">${Object.keys(p.items).length} stretches · ${mins} min</div>
+      </div>
+      <div class="actions">
+        <button class="load">Load</button>
+        <button class="rename">Rename</button>
+        <button class="del">Delete</button>
+      </div>
+    </div>`;
+  }).join('');
+
+  root.querySelectorAll('.playlist-card').forEach(card=>{
+    const id = card.dataset.id;
+    card.querySelector('.load').addEventListener('click', ()=>{
+      const list = loadPlaylists();
+      const p = list.find(x=>x.id===id);
+      if(!p) return;
+      selections = {...p.items};
+      document.querySelector('nav.tabs button[data-tab="build"]').click();
+      renderBuildTab();
+      renderSessionBar();
+    });
+    card.querySelector('.del').addEventListener('click', ()=>{
+      let list = loadPlaylists();
+      list = list.filter(x=>x.id!==id);
+      savePlaylists(list);
+      renderPlaylistsTab();
+    });
+    card.querySelector('.rename').addEventListener('click', ()=>{
+      const list = loadPlaylists();
+      const p = list.find(x=>x.id===id);
+      if(!p) return;
+      const titleArea = card.querySelector('.title-area');
+      titleArea.innerHTML = `<div class="name-edit">
+        <input type="text" value="${p.name.replace(/"/g,'&quot;')}">
+        <button class="confirm-rename">Save</button>
+      </div>`;
+      const input = titleArea.querySelector('input');
+      input.focus();
+      input.select();
+      function doRename(){
+        const newName = input.value.trim() || p.name;
+        const list2 = loadPlaylists();
+        const p2 = list2.find(x=>x.id===id);
+        if(p2){ p2.name = newName; savePlaylists(list2); }
+        renderPlaylistsTab();
+      }
+      titleArea.querySelector('.confirm-rename').addEventListener('click', doRename);
+      input.addEventListener('keydown', (e)=>{ if(e.key==='Enter') doRename(); });
+    });
+  });
+}
+
+/* ============ AUDIO: low drum beep ============ */
+let audioCtx = null;
+function ensureAudio(){
+  if(!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  if(audioCtx.state==='suspended') audioCtx.resume();
+}
+function playDrum(){
+  try{
+    ensureAudio();
+    const t0 = audioCtx.currentTime;
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(150, t0);
+    osc.frequency.exponentialRampToValueAtTime(45, t0 + 0.22);
+    gain.gain.setValueAtTime(0.0001, t0);
+    gain.gain.exponentialRampToValueAtTime(0.9, t0 + 0.012);
+    gain.gain.exponentialRampToValueAtTime(0.001, t0 + 0.32);
+    osc.connect(gain).connect(audioCtx.destination);
+    osc.start(t0);
+    osc.stop(t0 + 0.34);
+  }catch(e){ /* ignore */ }
+}
+function playDrumTriple(){
+  try{
+    ensureAudio();
+    [0, 0.16, 0.32].forEach(offset=>{
+      const t0 = audioCtx.currentTime + offset;
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(150, t0);
+      osc.frequency.exponentialRampToValueAtTime(45, t0 + 0.14);
+      gain.gain.setValueAtTime(0.0001, t0);
+      gain.gain.exponentialRampToValueAtTime(0.9, t0 + 0.01);
+      gain.gain.exponentialRampToValueAtTime(0.001, t0 + 0.2);
+      osc.connect(gain).connect(audioCtx.destination);
+      osc.start(t0);
+      osc.stop(t0 + 0.22);
+    });
+  }catch(e){ /* ignore */ }
+}
+
+/* ============ PLAY MODE ============ */
+let sequence = [];   // flattened segments
+let seqIndex = 0;
+let remainingMs = 0;
+let segmentDurationMs = 0;
+let tickTimer = null;
+let isPaused = false;
+let lastTick = null;
+
+function buildSequence(){
+  const seq = [];
+  const ids = Object.keys(selections);
+  ids.forEach(id=>{
+    const s = STRETCHES.find(x=>x.id==id);
+    const min = selections[id];
+    if(s.sides){
+      seq.push({stretch:s, side:'Right side', seconds:min*60});
+      seq.push({rest:true, seconds:10});
+      seq.push({stretch:s, side:'Left side', seconds:min*60});
+      seq.push({rest:true, seconds:10});
+    } else {
+      seq.push({stretch:s, side:null, seconds:min*60});
+      seq.push({rest:true, seconds:10});
+    }
+  });
+  // remove trailing rest
+  if(seq.length && seq[seq.length-1].rest) seq.pop();
+  return seq;
+}
+
+document.getElementById('playBtn').addEventListener('click', ()=>{
+  sequence = buildSequence();
+  if(!sequence.length) return;
+  seqIndex = -1;
+  openPlayOverlay();
+  advanceSegment();
+});
+
+function openPlayOverlay(){
+  document.getElementById('playOverlay').classList.add('open');
+}
+function closePlayOverlay(){
+  document.getElementById('playOverlay').classList.remove('open');
+  clearInterval(tickTimer);
+}
+document.getElementById('exitPlayBtn').addEventListener('click', ()=>{
+  if(confirm('End this session?')) closePlayOverlay();
+});
+
+const CIRCUMFERENCE = 2*Math.PI*44;
+
+function advanceSegment(){
+  seqIndex++;
+  if(seqIndex >= sequence.length){
+    showComplete();
+    return;
+  }
+  const seg = sequence[seqIndex];
+  segmentDurationMs = seg.seconds*1000;
+  remainingMs = segmentDurationMs;
+  isPaused = false;
+  playDrum();
+  renderSegmentUI(seg);
+  startTicking();
+}
+
+function stretchCountLabel(){
+  const totalStretches = sequence.filter(s=>!s.rest).length;
+  const doneIndex = sequence.slice(0,seqIndex+1).filter(s=>!s.rest).length;
+  return `Stretch ${Math.max(doneIndex,1)} of ${totalStretches}`;
+}
+
+function renderSegmentUI(seg){
+  document.getElementById('progressText').textContent = stretchCountLabel();
+  document.getElementById('pauseBtn').textContent = '❚❚';
+  const nameEl = document.getElementById('playStretchName');
+  const sideEl = document.getElementById('playSideTag');
+  const restTag = document.getElementById('restTag');
+  const infoBtn = document.getElementById('playInfoBtn');
+
+  if(seg.rest){
+    restTag.style.display='block';
+    nameEl.textContent = 'Rest';
+    sideEl.textContent = 'Get ready for the next stretch';
+    infoBtn.style.display='none';
+  } else {
+    restTag.style.display='none';
+    nameEl.textContent = seg.stretch.name;
+    sideEl.textContent = seg.side || '';
+    infoBtn.style.display='inline-block';
+    infoBtn.onclick = ()=>openDetailsSheet(seg.stretch);
+  }
+
+  const next = sequence[seqIndex+1];
+  const upNext = document.getElementById('upNext');
+  if(next){
+    upNext.textContent = next.rest ? `Then rest` : `Up next: ${next.stretch.name}${next.side ? ' — '+next.side : ''}`;
+  } else {
+    upNext.textContent = 'Last one — nice work almost done';
+  }
+}
+
+function startTicking(){
+  clearInterval(tickTimer);
+  lastTick = Date.now();
+  updateTimerDisplay();
+  tickTimer = setInterval(()=>{
+    if(isPaused) { lastTick = Date.now(); return; }
+    const now = Date.now();
+    const delta = now - lastTick;
+    lastTick = now;
+    remainingMs -= delta;
+    if(remainingMs <= 0){
+      remainingMs = 0;
+      updateTimerDisplay();
+      playDrumTriple();
+      advanceSegment();
+      return;
+    }
+    updateTimerDisplay();
+  }, 100);
+}
+
+function updateTimerDisplay(){
+  const secs = Math.ceil(remainingMs/1000);
+  const m = Math.floor(secs/60);
+  const s = secs%60;
+  document.getElementById('timeLabel').textContent = `${m}:${s.toString().padStart(2,'0')}`;
+  const frac = segmentDurationMs ? remainingMs/segmentDurationMs : 0;
+  document.getElementById('fgCircle').style.strokeDasharray = CIRCUMFERENCE;
+  document.getElementById('fgCircle').style.strokeDashoffset = CIRCUMFERENCE * (1-frac);
+}
+
+document.getElementById('pauseBtn').addEventListener('click', ()=>{
+  isPaused = !isPaused;
+  document.getElementById('pauseBtn').textContent = isPaused ? '▶' : '❚❚';
+  if(!isPaused) lastTick = Date.now();
+});
+document.getElementById('skipFwdBtn').addEventListener('click', ()=>{
+  advanceSegment();
+});
+document.getElementById('skipBackBtn').addEventListener('click', ()=>{
+  remainingMs = segmentDurationMs;
+  updateTimerDisplay();
+});
+
+function showComplete(){
+  clearInterval(tickTimer);
+  const body = document.getElementById('playBody');
+  document.getElementById('progressText').textContent = 'Session complete';
+  document.getElementById('playControls').style.display='none';
+  body.innerHTML = `
+    <div class="complete-screen">
+      <div class="big-check">✓</div>
+      <h2>Nice reach.</h2>
+      <div class="side-tag">Session finished — ${Math.round(sessionMinutes())} min of stretching logged.</div>
+    </div>
+  `;
+}
+
+document.getElementById('exitPlayBtn').addEventListener('click', function handler(){});
+
+/* Reset controls visibility when reopening */
+const origPlayBtnClick = document.getElementById('playBtn');
+
+/* ============ DETAILS SHEET (during play) ============ */
+function openDetailsSheet(s){
+  const sheet = document.getElementById('detailsSheet');
+  sheet.innerHTML = `
+    <h3>${s.name}</h3>
+    <h4>How to do it</h4>
+    <ul>${s.how.map(x=>`<li>${x}</li>`).join('')}</ul>
+    <h4>Muscles targeted</h4>
+    <ul>${s.muscles.map(x=>`<li>${x}</li>`).join('')}</ul>
+    <h4>Key benefits</h4>
+    <ul><li>${s.benefits}</li></ul>
+    ${imageBlockHTML(s)}
+    <button class="sheet-close">Close</button>
+  `;
+  sheet.classList.add('open');
+  document.getElementById('scrim').classList.add('open');
+  sheet.querySelector('.sheet-close').addEventListener('click', closeDetailsSheet);
+}
+function closeDetailsSheet(){
+  document.getElementById('detailsSheet').classList.remove('open');
+  document.getElementById('scrim').classList.remove('open');
+}
+document.getElementById('scrim').addEventListener('click', closeDetailsSheet);
+
+/* Rebuild play controls visibility whenever overlay opens fresh */
+document.getElementById('playBtn').addEventListener('click', ()=>{
+  document.getElementById('playControls').style.display='flex';
+});
+
+/* ============ INIT ============ */
+renderBuildTab();
+renderSessionBar();
+</script>
+</body>
+</html>
