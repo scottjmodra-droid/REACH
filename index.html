@@ -92,6 +92,20 @@
         its starting drum, and adjustable get-ready and transition lengths
         in place of the old fixed 5s/15s. Every setting defaults to the
         app's existing behaviour, so nothing changes until you open Settings
+  v2.12 Added a "Voice" picker to Settings, listing whatever text-to-speech
+        voices are actually installed on the device (populated live, since
+        that list can't be known ahead of time) — pick one and it's used for
+        the stretch-name announcements instead of the device default
+  v2.13 Play screen's "up next" line now skips past transitions to name the
+        next actual stretch ("Next: <name>"), or just says "Last one" on the
+        final stretch. Fixed stretch-name announcements to reliably finish
+        before the starting drum and timer — previously they raced an
+        onend/onerror event that can fire almost instantly on iOS (and in
+        some browsers with no speech engine at all), so the timer could
+        silently start counting down mid-announcement; now it waits a fixed,
+        text-length-based pause instead. Made the min/side duration chips
+        taller for easier tapping in Build a session (session preview keeps
+        its original compact size)
 -->
 <html lang="en">
 <head>
@@ -425,6 +439,11 @@
     background:var(--moss);
     border-color:var(--moss);
     color:var(--white);
+  }
+  /* Build-a-session tab only: taller chips for easier tapping. Session preview
+     (.pi-dur-row) keeps the original compact size on purpose. */
+  .dur-row .dur-chip{
+    padding:7px 10px;
   }
   .sides-tag{
     font-size:10px;
@@ -911,6 +930,18 @@
     text-align:center;
   }
   .settings-unit{font-size:13px;color:var(--ink-faint);flex-shrink:0;}
+  .settings-row select{
+    flex:1;
+    min-width:0;
+    max-width:190px;
+    font-family:'Inter',sans-serif;
+    font-size:13px;
+    border:1px solid var(--line);
+    border-radius:8px;
+    padding:7px 8px;
+    background:var(--bg-alt);
+    color:var(--ink);
+  }
   .settings-row input[type="checkbox"]{
     width:20px;height:20px;
     accent-color:var(--moss);
@@ -966,7 +997,7 @@
       </svg>
     </div>
     <h1>Reach</h1>
-    <span class="version-tag" id="versionTag">v2.11</span>
+    <span class="version-tag" id="versionTag">v2.13</span>
   </div>
   <button class="header-icon-btn" id="settingsGearBtn" aria-label="Settings" title="Settings">
     <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -1091,6 +1122,11 @@
   <div class="settings-row">
     <div class="settings-label">Speak stretch names</div>
     <input type="checkbox" id="ttsToggle">
+  </div>
+
+  <div class="settings-row">
+    <div class="settings-label">Voice</div>
+    <select id="voiceSelect"></select>
   </div>
 
   <div class="settings-row">
@@ -1404,7 +1440,7 @@ function renderSessionBar(){
 // transition lengths. Every default below reproduces the app's old fixed
 // behaviour exactly, so nothing changes for anyone until they open Settings.
 const SETTINGS_KEY = 'reach_settings_v1';
-const DEFAULT_SETTINGS = { beepVolume:100, ttsEnabled:false, readySeconds:5, transitionSeconds:15 };
+const DEFAULT_SETTINGS = { beepVolume:100, ttsEnabled:false, voiceName:'', readySeconds:5, transitionSeconds:15 };
 function loadSettings(){
   try{
     const stored = JSON.parse(localStorage.getItem(SETTINGS_KEY));
@@ -1430,11 +1466,36 @@ function applyThemeChoice(theme){
 document.getElementById('themeLightBtn').addEventListener('click', ()=> applyThemeChoice('light'));
 document.getElementById('themeDarkBtn').addEventListener('click', ()=> applyThemeChoice('dark'));
 
+// The list of installed voices comes from the device itself and can arrive
+// asynchronously (especially on first load), so this both populates it now
+// and re-populates whenever the browser reports the list has changed.
+function populateVoiceList(){
+  const select = document.getElementById('voiceSelect');
+  if(!select) return;
+  if(!('speechSynthesis' in window)){
+    select.innerHTML = '<option value="">Not supported on this device</option>';
+    select.disabled = true;
+    return;
+  }
+  const all = window.speechSynthesis.getVoices();
+  const english = all.filter(v => v.lang && v.lang.toLowerCase().startsWith('en'));
+  const list = (english.length ? english : all).slice().sort((a,b)=> a.name.localeCompare(b.name));
+  const current = settings.voiceName;
+  select.innerHTML = '<option value="">Default (device voice)</option>' +
+    list.map(v => `<option value="${v.name.replace(/"/g,'&quot;')}">${v.name}${v.lang ? ' — '+v.lang : ''}</option>`).join('');
+  select.value = list.some(v=>v.name===current) ? current : '';
+}
+if('speechSynthesis' in window){
+  window.speechSynthesis.onvoiceschanged = populateVoiceList;
+}
+populateVoiceList();
+
 function openSettingsSheet(){
   applyThemeChoice(currentTheme());
   document.getElementById('volumeSlider').value = settings.beepVolume;
   document.getElementById('volumeValue').textContent = settings.beepVolume===0 ? 'Muted' : settings.beepVolume + '%';
   document.getElementById('ttsToggle').checked = settings.ttsEnabled;
+  populateVoiceList();
   document.getElementById('readySecondsInput').value = settings.readySeconds;
   document.getElementById('transitionSecondsInput').value = settings.transitionSeconds;
   document.getElementById('settingsSheet').classList.add('open');
@@ -1455,6 +1516,10 @@ document.getElementById('volumeSlider').addEventListener('input', (e)=>{
 });
 document.getElementById('ttsToggle').addEventListener('change', (e)=>{
   settings.ttsEnabled = e.target.checked;
+  saveSettings();
+});
+document.getElementById('voiceSelect').addEventListener('change', (e)=>{
+  settings.voiceName = e.target.value;
   saveSettings();
 });
 document.getElementById('readySecondsInput').addEventListener('change', (e)=>{
@@ -1982,6 +2047,11 @@ function advanceSegment(){
     showComplete();
     return;
   }
+  // Stop the previous segment's interval right away. Without this, while we
+  // wait on speakStretchName below, the old interval keeps firing and quietly
+  // eats into the new segment's remainingMs before its own timer has "started."
+  clearInterval(tickTimer);
+  tickTimer = null;
   const seg = sequence[seqIndex];
   segmentDurationMs = seg.seconds*1000;
   remainingMs = segmentDurationMs;
@@ -1991,7 +2061,7 @@ function advanceSegment(){
 
   if(!seg.ready && !seg.rest){
     if(settings.ttsEnabled){
-      // Speak the stretch first, then the starting drum, then start the clock.
+      // 1. speak the stretch name, 2. starting drum, 3. timer starts — in that order.
       speakStretchName(seg, ()=>{ playDrum(); startTicking(); });
       return;
     }
@@ -2001,9 +2071,13 @@ function advanceSegment(){
 }
 
 // Announces the stretch (and which side, if any) before the starting drum,
-// so a session can be followed without looking at the phone. Any speech-API
-// hiccup — unsupported browser, iOS staying quiet after backgrounding — falls
-// through to the drum after a short timeout rather than stalling playback.
+// so a session can be followed without looking at the phone. We don't rely on
+// the utterance's onend/onerror events to know when speech has finished —
+// iOS Safari can fire onend almost instantly (well before the voice actually
+// stops talking), which would let the drum and timer start too early. Instead
+// we estimate how long the phrase takes to speak from its length and always
+// wait that long, so the order (name, then drum, then timer) is deterministic
+// regardless of how reliable the device's speech events are.
 function speakStretchName(seg, then){
   let done = false;
   function finish(){
@@ -2017,10 +2091,21 @@ function speakStretchName(seg, then){
     const text = seg.stretch.name + (seg.side ? ', ' + seg.side : '');
     const utter = new SpeechSynthesisUtterance(text);
     utter.rate = 1.0;
-    utter.onend = finish;
-    utter.onerror = finish;
-    setTimeout(finish, 4000); // safety net if onend never fires
+    if(settings.voiceName){
+      const match = window.speechSynthesis.getVoices().find(v=>v.name===settings.voiceName);
+      if(match) utter.voice = match;
+    }
     window.speechSynthesis.speak(utter);
+    // Deliberately not listening for onend/onerror to decide when to move on:
+    // both can fire almost instantly, well before the voice actually finishes
+    // (a documented iOS quirk, and also what happens in some browsers/test
+    // environments with no speech engine available at all). A fixed,
+    // text-length-based wait keeps the "name, then drum, then timer" order
+    // reliable everywhere instead of racing an unreliable event.
+    // ~150 words/minute at rate 1.0 is roughly 13 characters/sec including
+    // spaces; add a fixed pause so short names still get a natural beat.
+    const estimatedMs = Math.round((text.length / 13) * 1000) + 350;
+    setTimeout(finish, Math.max(estimatedMs, 900));
   }catch(e){ finish(); }
 }
 
@@ -2066,13 +2151,13 @@ function renderSegmentUI(seg){
     }
   }
 
-  const next = sequence[seqIndex+1];
+  // Look past any transition segment to the next real stretch — mentioning
+  // the transition itself is redundant since the UI already shows it.
+  const upcoming = sequence.slice(seqIndex+1).find(x=>!x.rest && !x.ready);
   const upNext = document.getElementById('upNext');
-  if(next){
-    upNext.textContent = next.rest ? `Then transition` : `Up next: ${next.stretch.name}${next.side ? ' — '+next.side : ''}`;
-  } else {
-    upNext.textContent = 'Last one — nice work almost done';
-  }
+  upNext.textContent = upcoming
+    ? `Next: ${upcoming.stretch.name}${upcoming.side ? ' — '+upcoming.side : ''}`
+    : 'Last one';
 }
 
 function startTicking(){
