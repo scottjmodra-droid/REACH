@@ -85,6 +85,13 @@
         header) so the original light-and-beige look from before v2.9 is
         still available — the choice is remembered next time you open the
         app
+  v2.11 Replaced the header toggle with a Settings sheet (gear icon, top
+        right): light/dark mode now lives there alongside four new options —
+        a beep volume slider (down to a full mute), a "Speak stretch names"
+        toggle that announces each stretch (and side) by voice just before
+        its starting drum, and adjustable get-ready and transition lengths
+        in place of the old fixed 5s/15s. Every setting defaults to the
+        app's existing behaviour, so nothing changes until you open Settings
 -->
 <html lang="en">
 <head>
@@ -177,7 +184,7 @@
     align-items:baseline;
     gap:12px;
   }
-  .theme-toggle{
+  .header-icon-btn{
     background:var(--bg-alt);
     border:1px solid var(--line);
     color:var(--ink);
@@ -186,7 +193,7 @@
     display:flex;align-items:center;justify-content:center;
     flex-shrink:0;
   }
-  .theme-toggle svg{width:19px;height:19px;}
+  .header-icon-btn svg{width:19px;height:19px;}
   .brand .mark{
     width:34px;height:34px;
     border-radius:9px;
@@ -864,6 +871,67 @@
     border:none;padding:10px 22px;border-radius:20px;
     font-weight:600;font-size:13.5px;
   }
+
+  /* ---------- Settings sheet ---------- */
+  .settings-row{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:12px;
+    padding:14px 0;
+    border-top:1px solid var(--line);
+  }
+  .settings-row:first-of-type{border-top:none;padding-top:2px;}
+  .settings-label{
+    font-size:14.5px;
+    font-weight:600;
+    color:var(--ink);
+    flex-shrink:0;
+  }
+  .settings-row input[type="range"]{
+    flex:1;
+    accent-color:var(--moss);
+  }
+  .settings-value{
+    font-size:13px;
+    color:var(--ink-faint);
+    min-width:44px;
+    text-align:right;
+    flex-shrink:0;
+  }
+  .settings-row input[type="number"]{
+    width:60px;
+    font-family:'Fraunces',serif;
+    font-size:15px;
+    border:1px solid var(--line);
+    border-radius:8px;
+    padding:6px 8px;
+    background:var(--bg-alt);
+    color:var(--ink);
+    text-align:center;
+  }
+  .settings-unit{font-size:13px;color:var(--ink-faint);flex-shrink:0;}
+  .settings-row input[type="checkbox"]{
+    width:20px;height:20px;
+    accent-color:var(--moss);
+    flex-shrink:0;
+  }
+  .theme-seg{display:flex;gap:6px;}
+  .theme-seg-btn{
+    border:1px solid var(--line);
+    background:var(--bg-alt);
+    color:var(--ink-soft);
+    padding:7px 14px;
+    border-radius:20px;
+    font-size:12.5px;
+    font-weight:600;
+  }
+  .theme-seg-btn.active{
+    background:var(--moss);
+    border-color:var(--moss);
+    color:var(--white);
+  }
+
   .scrim{
     position:fixed;inset:0;background:rgba(0,0,0,0.35);
     z-index:105;display:none;
@@ -898,24 +966,22 @@
       </svg>
     </div>
     <h1>Reach</h1>
-    <span class="version-tag" id="versionTag">v2.10</span>
+    <span class="version-tag" id="versionTag">v2.11</span>
   </div>
-  <button class="theme-toggle" id="themeToggleBtn" aria-label="Switch light/dark mode" title="Switch appearance">
-    <svg class="icon-sun" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <circle cx="12" cy="12" r="4.3" fill="currentColor"/>
-      <g stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
-        <line x1="12" y1="1.5" x2="12" y2="4"/>
-        <line x1="12" y1="20" x2="12" y2="22.5"/>
-        <line x1="1.5" y1="12" x2="4" y2="12"/>
-        <line x1="20" y1="12" x2="22.5" y2="12"/>
-        <line x1="4.2" y1="4.2" x2="5.8" y2="5.8"/>
-        <line x1="18.2" y1="18.2" x2="19.8" y2="19.8"/>
-        <line x1="4.2" y1="19.8" x2="5.8" y2="18.2"/>
-        <line x1="18.2" y1="5.8" x2="19.8" y2="4.2"/>
+  <button class="header-icon-btn" id="settingsGearBtn" aria-label="Settings" title="Settings">
+    <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="12" cy="12" r="6.5" stroke="currentColor" stroke-width="1.8"/>
+      <circle cx="12" cy="12" r="2.3" fill="currentColor"/>
+      <g fill="currentColor">
+        <rect x="10.8" y="1.3" width="2.4" height="3.2" rx="0.6"/>
+        <rect x="10.8" y="19.5" width="2.4" height="3.2" rx="0.6"/>
+        <rect x="1.3" y="10.8" width="3.2" height="2.4" rx="0.6"/>
+        <rect x="19.5" y="10.8" width="3.2" height="2.4" rx="0.6"/>
+        <rect x="4.4" y="4.4" width="2.4" height="3.2" rx="0.6" transform="rotate(45 5.6 6)"/>
+        <rect x="17.2" y="16.4" width="2.4" height="3.2" rx="0.6" transform="rotate(45 18.4 18)"/>
+        <rect x="4.4" y="16.4" width="2.4" height="3.2" rx="0.6" transform="rotate(-45 5.6 18)"/>
+        <rect x="17.2" y="4.4" width="2.4" height="3.2" rx="0.6" transform="rotate(-45 18.4 6)"/>
       </g>
-    </svg>
-    <svg class="icon-moon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="display:none;">
-      <path d="M20 14.7A8.4 8.4 0 1 1 9.3 4a6.9 6.9 0 0 0 10.7 10.7z" fill="currentColor"/>
     </svg>
   </button>
 </header>
@@ -1005,6 +1071,42 @@
 </div>
 <div class="scrim" id="scrim"></div>
 <div class="play-details-sheet" id="detailsSheet"></div>
+<div class="play-details-sheet settings-sheet" id="settingsSheet">
+  <h3>Settings</h3>
+
+  <div class="settings-row">
+    <div class="settings-label">Appearance</div>
+    <div class="theme-seg">
+      <button class="theme-seg-btn" id="themeLightBtn">Light</button>
+      <button class="theme-seg-btn" id="themeDarkBtn">Dark</button>
+    </div>
+  </div>
+
+  <div class="settings-row">
+    <div class="settings-label">Beep volume</div>
+    <input type="range" id="volumeSlider" min="0" max="100" step="10">
+    <span class="settings-value" id="volumeValue">100%</span>
+  </div>
+
+  <div class="settings-row">
+    <div class="settings-label">Speak stretch names</div>
+    <input type="checkbox" id="ttsToggle">
+  </div>
+
+  <div class="settings-row">
+    <div class="settings-label">Get ready countdown</div>
+    <input type="number" id="readySecondsInput" min="0" max="30" step="1">
+    <span class="settings-unit">sec</span>
+  </div>
+
+  <div class="settings-row">
+    <div class="settings-label">Transition length</div>
+    <input type="number" id="transitionSecondsInput" min="5" max="60" step="1">
+    <span class="settings-unit">sec</span>
+  </div>
+
+  <button class="sheet-close" id="settingsCloseBtn">Close</button>
+</div>
 
 <script>
 /* ============ DATA ============ */
@@ -1296,23 +1398,80 @@ function renderSessionBar(){
   document.getElementById('playBtn').disabled = false;
 }
 
-/* ============ THEME (light/dark toggle) ============ */
+/* ============ SETTINGS ============ */
+// One settings sheet (gear icon, top right) covers appearance plus everything
+// that affects a session: beep volume, spoken stretch names, and the get-ready/
+// transition lengths. Every default below reproduces the app's old fixed
+// behaviour exactly, so nothing changes for anyone until they open Settings.
+const SETTINGS_KEY = 'reach_settings_v1';
+const DEFAULT_SETTINGS = { beepVolume:100, ttsEnabled:false, readySeconds:5, transitionSeconds:15 };
+function loadSettings(){
+  try{
+    const stored = JSON.parse(localStorage.getItem(SETTINGS_KEY));
+    return Object.assign({}, DEFAULT_SETTINGS, stored || {});
+  }catch(e){ return Object.assign({}, DEFAULT_SETTINGS); }
+}
+function saveSettings(){
+  try{ localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings)); }catch(e){}
+}
+let settings = loadSettings();
+
 // The <head> script sets data-theme="light" before first paint if that was
-// the stored choice, so this just keeps the icon in sync and handles taps.
+// the stored choice, so this just keeps the segmented control in sync.
 function currentTheme(){
   return document.documentElement.getAttribute('data-theme') === 'light' ? 'light' : 'dark';
 }
-function setThemeToggleIcon(theme){
-  const btn = document.getElementById('themeToggleBtn');
-  btn.querySelector('.icon-sun').style.display = theme==='dark' ? '' : 'none';
-  btn.querySelector('.icon-moon').style.display = theme==='light' ? '' : 'none';
+function applyThemeChoice(theme){
+  document.documentElement.setAttribute('data-theme', theme);
+  try{ localStorage.setItem('reach_theme', theme); }catch(e){}
+  document.getElementById('themeLightBtn').classList.toggle('active', theme==='light');
+  document.getElementById('themeDarkBtn').classList.toggle('active', theme==='dark');
 }
-setThemeToggleIcon(currentTheme());
-document.getElementById('themeToggleBtn').addEventListener('click', ()=>{
-  const next = currentTheme()==='light' ? 'dark' : 'light';
-  document.documentElement.setAttribute('data-theme', next);
-  try{ localStorage.setItem('reach_theme', next); }catch(e){}
-  setThemeToggleIcon(next);
+document.getElementById('themeLightBtn').addEventListener('click', ()=> applyThemeChoice('light'));
+document.getElementById('themeDarkBtn').addEventListener('click', ()=> applyThemeChoice('dark'));
+
+function openSettingsSheet(){
+  applyThemeChoice(currentTheme());
+  document.getElementById('volumeSlider').value = settings.beepVolume;
+  document.getElementById('volumeValue').textContent = settings.beepVolume===0 ? 'Muted' : settings.beepVolume + '%';
+  document.getElementById('ttsToggle').checked = settings.ttsEnabled;
+  document.getElementById('readySecondsInput').value = settings.readySeconds;
+  document.getElementById('transitionSecondsInput').value = settings.transitionSeconds;
+  document.getElementById('settingsSheet').classList.add('open');
+  document.getElementById('scrim').classList.add('open');
+}
+function closeSettingsSheet(){
+  document.getElementById('settingsSheet').classList.remove('open');
+  document.getElementById('scrim').classList.remove('open');
+}
+document.getElementById('settingsGearBtn').addEventListener('click', openSettingsSheet);
+document.getElementById('settingsCloseBtn').addEventListener('click', closeSettingsSheet);
+
+document.getElementById('volumeSlider').addEventListener('input', (e)=>{
+  settings.beepVolume = parseInt(e.target.value, 10);
+  document.getElementById('volumeValue').textContent = settings.beepVolume===0 ? 'Muted' : settings.beepVolume + '%';
+  applyBeepVolume();
+  saveSettings();
+});
+document.getElementById('ttsToggle').addEventListener('change', (e)=>{
+  settings.ttsEnabled = e.target.checked;
+  saveSettings();
+});
+document.getElementById('readySecondsInput').addEventListener('change', (e)=>{
+  let v = parseInt(e.target.value, 10);
+  if(isNaN(v) || v<0) v = 0;
+  if(v>60) v = 60;
+  settings.readySeconds = v;
+  e.target.value = v;
+  saveSettings();
+});
+document.getElementById('transitionSecondsInput').addEventListener('change', (e)=>{
+  let v = parseInt(e.target.value, 10);
+  if(isNaN(v) || v<1) v = 1;
+  if(v>120) v = 120;
+  settings.transitionSeconds = v;
+  e.target.value = v;
+  saveSettings();
 });
 
 /* ============ TABS ============ */
@@ -1515,9 +1674,15 @@ function ensureAudioGraph(ctx){
     compressorNode.attack.value = 0.003;
     compressorNode.release.value = 0.2;
     masterGain = ctx.createGain();
-    masterGain.gain.value = 1.8;
     masterGain.connect(compressorNode).connect(ctx.destination);
+    applyBeepVolume();
   }catch(e){ masterGain = null; compressorNode = null; }
+}
+// The Settings beep-volume slider (0-100%) scales the same 1.8 base gain
+// that made the drum louder/punchier in the first place — 100% keeps the
+// old fixed loudness exactly, 0% is a full mute.
+function applyBeepVolume(){
+  if(masterGain) masterGain.gain.value = 1.8 * (settings.beepVolume/100);
 }
 function drumOutput(ctx){
   ensureAudioGraph(ctx);
@@ -1628,12 +1793,12 @@ function buildSequence(items){
     const min = items[id];
     if(s.sides){
       seq.push({stretch:s, side:'Right side', seconds:min*60});
-      seq.push({rest:true, seconds:15});
+      seq.push({rest:true, seconds:settings.transitionSeconds});
       seq.push({stretch:s, side:'Left side', seconds:min*60});
-      seq.push({rest:true, seconds:15});
+      seq.push({rest:true, seconds:settings.transitionSeconds});
     } else {
       seq.push({stretch:s, side:null, seconds:min*60});
-      seq.push({rest:true, seconds:15});
+      seq.push({rest:true, seconds:settings.transitionSeconds});
     }
   });
   // remove trailing rest
@@ -1777,7 +1942,7 @@ async function startPlayback(items){
   acquireSessionWakeLock();
   // ------------------------------------------------------------------
 
-  sequence = [{ready:true, seconds:5}, ...built];
+  sequence = settings.readySeconds > 0 ? [{ready:true, seconds:settings.readySeconds}, ...built] : [...built];
   seqIndex = -1;
   sessionComplete = false;
   closePreview();
@@ -1801,6 +1966,7 @@ function closePlayOverlay(){
   document.getElementById('playOverlay').classList.remove('open');
   clearInterval(tickTimer);
   endAudioSession();
+  try{ if('speechSynthesis' in window) window.speechSynthesis.cancel(); }catch(e){}
 }
 document.getElementById('exitPlayBtn').addEventListener('click', ()=>{
   // Once a session has finished naturally, there's nothing left to confirm —
@@ -1820,11 +1986,42 @@ function advanceSegment(){
   segmentDurationMs = seg.seconds*1000;
   remainingMs = segmentDurationMs;
   isPaused = false;
+  renderSegmentUI(seg);
+  updateTimerDisplay(); // show the fresh duration right away, even before ticking starts
+
   if(!seg.ready && !seg.rest){
+    if(settings.ttsEnabled){
+      // Speak the stretch first, then the starting drum, then start the clock.
+      speakStretchName(seg, ()=>{ playDrum(); startTicking(); });
+      return;
+    }
     playDrum(); // 1 drum: starts a stretch (also marks the end of a transition, if one preceded it)
   }
-  renderSegmentUI(seg);
   startTicking();
+}
+
+// Announces the stretch (and which side, if any) before the starting drum,
+// so a session can be followed without looking at the phone. Any speech-API
+// hiccup — unsupported browser, iOS staying quiet after backgrounding — falls
+// through to the drum after a short timeout rather than stalling playback.
+function speakStretchName(seg, then){
+  let done = false;
+  function finish(){
+    if(done) return;
+    done = true;
+    then();
+  }
+  try{
+    if(!('speechSynthesis' in window)){ finish(); return; }
+    window.speechSynthesis.cancel();
+    const text = seg.stretch.name + (seg.side ? ', ' + seg.side : '');
+    const utter = new SpeechSynthesisUtterance(text);
+    utter.rate = 1.0;
+    utter.onend = finish;
+    utter.onerror = finish;
+    setTimeout(finish, 4000); // safety net if onend never fires
+    window.speechSynthesis.speak(utter);
+  }catch(e){ finish(); }
 }
 
 function stretchCountLabel(){
@@ -1936,6 +2133,7 @@ document.getElementById('skipBackBtn').addEventListener('click', ()=>{
 function showComplete(){
   clearInterval(tickTimer);
   sessionComplete = true;
+  try{ if('speechSynthesis' in window) window.speechSynthesis.cancel(); }catch(e){}
   document.getElementById('progressText').textContent = 'Session complete';
   document.getElementById('playInfoBtn').style.display='none';
   document.getElementById('playControls').style.display='none';
@@ -1980,7 +2178,10 @@ function closeDetailsSheet(){
   document.getElementById('detailsSheet').classList.remove('open');
   document.getElementById('scrim').classList.remove('open');
 }
-document.getElementById('scrim').addEventListener('click', closeDetailsSheet);
+document.getElementById('scrim').addEventListener('click', ()=>{
+  closeDetailsSheet();
+  closeSettingsSheet();
+});
 
 /* ============ SEED: recommended playlists ============ */
 // Each has its own flag so it's offered exactly once and never reappears if
