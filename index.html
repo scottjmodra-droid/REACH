@@ -10,6 +10,17 @@
         cards, tightened card padding, and shrank duration pill size
   v1.6  Added home screen icon (apple-touch-icon, favicon, manifest) — green
         tile using the header's leaf mark, plus standalone web-app meta tags
+  v1.7  Added a session preview screen (list + total time) before playing,
+        shown after saving or loading a playlist; added a 5-sec "get ready"
+        lead-in; fixed beep pattern so each drum sound only plays once per
+        transition (1 drum starts a stretch, 3 quick drums end it and start
+        the rest); removed the header tagline; fixed the playlist rename
+        row layout; moved "Stretch details" off the overlapping progress text
+  v1.8  Made beeps survive backgrounding (matches the fix used in TRACKR):
+        unlocks iOS's audio session on the Play tap, keeps a silent oscillator
+        alive so the AudioContext isn't auto-suspended, re-resumes audio on
+        return-to-tab/next-touch/resume-from-pause, holds a screen wake lock
+        during playback, and fully closes the context when a session ends
 -->
 <html lang="en">
 <head>
@@ -95,13 +106,6 @@
     padding:3px 9px;
     border-radius:20px;
     align-self:center;
-  }
-  header.top p.tagline{
-    margin:8px 0 0;
-    color:var(--ink-soft);
-    font-size:14.5px;
-    max-width:46ch;
-    line-height:1.5;
   }
 
   nav.tabs{
@@ -343,6 +347,7 @@
     align-items:center;
     gap:12px;
   }
+  .playlist-card .title-area{flex:1;min-width:0;}
   .playlist-card h3{font-size:16px;margin:0 0 3px;}
   .playlist-card .meta{font-size:12.5px;color:var(--ink-faint);}
   .playlist-card .actions{display:flex;gap:8px;flex-shrink:0;}
@@ -366,6 +371,9 @@
   .playlist-card .name-edit button{
     border:none;background:var(--moss);color:var(--white);
     padding:7px 12px;border-radius:16px;font-size:12.5px;font-weight:600;
+  }
+  .playlist-card .name-edit button.cancel-rename{
+    background:none;color:var(--ink-faint);padding:7px 6px;
   }
   .save-panel{
     max-width:920px;margin:0 auto;padding:0 20px 14px;display:none;
@@ -403,6 +411,74 @@
     padding:60px 20px;
     color:var(--ink-faint);
     font-size:14.5px;
+  }
+
+  /* ---------- Session preview overlay ---------- */
+  .preview-overlay{
+    position:fixed;inset:0;
+    background:var(--bg);
+    color:var(--ink);
+    z-index:90;
+    display:none;
+    flex-direction:column;
+  }
+  .preview-overlay.open{display:flex;}
+  .preview-top{
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-start;
+    gap:12px;
+    max-width:920px;width:100%;
+    margin:0 auto;
+    padding:26px 20px 4px;
+  }
+  .preview-top h2{font-size:21px;margin:0;color:var(--moss-deep);}
+  .preview-top button.close{
+    background:var(--sage-pale);
+    border:1px solid var(--line);
+    color:var(--moss-dark);
+    width:34px;height:34px;border-radius:50%;
+    font-size:14px;flex-shrink:0;
+  }
+  .preview-total{
+    max-width:920px;width:100%;
+    margin:0 auto;
+    padding:0 20px 16px;
+    font-size:13.5px;
+    color:var(--ink-faint);
+  }
+  .preview-list{
+    flex:1;
+    overflow-y:auto;
+    max-width:920px;width:100%;
+    margin:0 auto;
+    padding:0 20px 120px;
+  }
+  .preview-item{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:10px;
+    padding:13px 0;
+    border-top:1px solid var(--line);
+  }
+  .preview-item:first-child{border-top:none;}
+  .preview-item .pi-name{font-size:14.5px;font-weight:600;color:var(--ink);}
+  .preview-item .pi-dur{font-size:12.5px;color:var(--ink-faint);margin-top:2px;}
+  .preview-actions{
+    position:fixed;left:0;right:0;bottom:0;
+    background:var(--moss-deep);
+    padding:16px 20px calc(16px + env(safe-area-inset-bottom, 0px));
+    z-index:91;
+  }
+  .preview-actions button.play-preview{
+    display:block;
+    width:100%;max-width:920px;
+    margin:0 auto;
+    background:var(--amber);
+    border:none;color:var(--moss-deep);
+    padding:14px;border-radius:26px;
+    font-size:15px;font-weight:700;
   }
 
   /* ---------- Play overlay ---------- */
@@ -498,15 +574,22 @@
     color:var(--moss-deep);
     font-size:22px;
   }
+  .play-top-left{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    flex-wrap:wrap;
+    min-width:0;
+  }
   .play-info-btn{
-    position:absolute;
-    top:20px;left:22px;
     background:rgba(255,255,255,0.08);
     border:none;color:var(--white);
     padding:8px 14px;
     border-radius:20px;
     font-size:12.5px;
     font-weight:600;
+    white-space:nowrap;
+    flex-shrink:0;
   }
   .play-details-sheet{
     position:fixed;
@@ -552,6 +635,8 @@
 </head>
 <body>
 
+<audio id="iosUnmuteHack" preload="auto" loop playsinline src="data:audio/mpeg;base64,SUQzBAAAAAABEVRYWFgAAAAtAAADY29tbWVudABCaWdTb3VuZEJhbmsuY29tIC8gTGFTb25vdGhlcXVlLm9yZwBURU5DAAAAHQAAA1N3aXRjaCBQbHVzIMKpIE5DSCBTb2Z0d2FyZQBUSVQyAAAABgAAAzIyMzUAVFNTRQAAAA8AAANMYXZmNTcuODMuMTAwAAAAAAAAAAAAAAD/80DEAAAAA0gAAAAATEFNRTMuMTAwVVVVVVVVVVVVVUxBTUUzLjEwMFVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV/zQsQbAAADSAAAAABVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV"></audio>
+
 <header class="top">
   <div class="brand">
     <div class="mark">
@@ -560,9 +645,8 @@
       </svg>
     </div>
     <h1>Reach</h1>
-    <span class="version-tag" id="versionTag">v1.6</span>
+    <span class="version-tag" id="versionTag">v1.8</span>
   </div>
-  <p class="tagline">Build a stretching session from 31 static stretches, then follow along with timed holds and a quiet drum cue between each one.</p>
 </header>
 
 <nav class="tabs">
@@ -594,14 +678,29 @@
   </div>
 </div>
 
+<!-- Session preview overlay -->
+<div class="preview-overlay" id="previewOverlay">
+  <div class="preview-top">
+    <h2>Session preview</h2>
+    <button class="close" id="closePreviewBtn">✕</button>
+  </div>
+  <div class="preview-total" id="previewTotal"></div>
+  <div class="preview-list" id="previewList"></div>
+  <div class="preview-actions">
+    <button class="play-preview" id="startPlayBtn">▶ Play</button>
+  </div>
+</div>
+
 <!-- Play overlay -->
 <div class="play-overlay" id="playOverlay">
   <div class="play-top">
-    <span class="progress-text" id="progressText">Stretch 1 of 8</span>
+    <div class="play-top-left">
+      <span class="progress-text" id="progressText">Stretch 1 of 8</span>
+      <button class="play-info-btn" id="playInfoBtn" style="display:none;">Stretch details</button>
+    </div>
     <button class="close" id="exitPlayBtn">✕</button>
   </div>
   <div class="play-body" id="playBody">
-    <button class="play-info-btn" id="playInfoBtn" style="display:none;">Stretch details</button>
     <div class="rest-tag" id="restTag" style="display:none;">Rest</div>
     <h2 id="playStretchName">Get ready</h2>
     <div class="side-tag" id="playSideTag"></div>
@@ -830,11 +929,14 @@ function renderCard(s){
 }
 
 /* ============ SESSION BAR ============ */
-function sessionMinutes(){
-  return Object.entries(selections).reduce((sum,[id,min])=>{
+function sessionMinutesFor(items){
+  return Object.entries(items).reduce((sum,[id,min])=>{
     const s = STRETCHES.find(x=>x.id==id);
     return sum + min * (s.sides ? 2 : 1);
   },0);
+}
+function sessionMinutes(){
+  return sessionMinutesFor(selections);
 }
 
 function renderSessionBar(){
@@ -915,18 +1017,16 @@ function confirmSave(){
   const input = document.getElementById('savePanelInput');
   const name = input.value.trim() || `${sessionMinutes()} min`;
   const list = loadPlaylists();
-  list.push({
+  const newEntry = {
     id: Date.now().toString(),
     name,
     createdAt: new Date().toISOString(),
     items: {...selections}
-  });
+  };
+  list.push(newEntry);
   savePlaylists(list);
   document.getElementById('savePanel').classList.remove('open');
-  const savedLabel = document.getElementById('sessionSub');
-  const original = savedLabel.textContent;
-  savedLabel.textContent = `Saved as "${name}"`;
-  setTimeout(()=>{ savedLabel.textContent = original; }, 2200);
+  openPreview(newEntry.items);
 }
 document.getElementById('savePanelConfirm').addEventListener('click', confirmSave);
 document.getElementById('savePanelInput').addEventListener('keydown', (e)=>{
@@ -964,10 +1064,7 @@ function renderPlaylistsTab(){
       const list = loadPlaylists();
       const p = list.find(x=>x.id===id);
       if(!p) return;
-      selections = {...p.items};
-      document.querySelector('nav.tabs button[data-tab="build"]').click();
-      renderBuildTab();
-      renderSessionBar();
+      openPreview(p.items);
     });
     card.querySelector('.del').addEventListener('click', ()=>{
       let list = loadPlaylists();
@@ -980,9 +1077,12 @@ function renderPlaylistsTab(){
       const p = list.find(x=>x.id===id);
       if(!p) return;
       const titleArea = card.querySelector('.title-area');
+      const actions = card.querySelector('.actions');
+      actions.style.display = 'none';
       titleArea.innerHTML = `<div class="name-edit">
         <input type="text" value="${p.name.replace(/"/g,'&quot;')}">
         <button class="confirm-rename">Save</button>
+        <button class="cancel-rename">Cancel</button>
       </div>`;
       const input = titleArea.querySelector('input');
       input.focus();
@@ -995,52 +1095,155 @@ function renderPlaylistsTab(){
         renderPlaylistsTab();
       }
       titleArea.querySelector('.confirm-rename').addEventListener('click', doRename);
-      input.addEventListener('keydown', (e)=>{ if(e.key==='Enter') doRename(); });
+      titleArea.querySelector('.cancel-rename').addEventListener('click', ()=> renderPlaylistsTab());
+      input.addEventListener('keydown', (e)=>{
+        if(e.key==='Enter') doRename();
+        if(e.key==='Escape') renderPlaylistsTab();
+      });
     });
   });
 }
 
 /* ============ AUDIO: low drum beep ============ */
+// Keeping beeps reliable across the whole session — including when the phone
+// switches audio apps (e.g. Spotify) or the screen locks — takes more than
+// just creating an AudioContext. iOS in particular will suspend the context,
+// or silence it entirely if another app owns the audio session, unless we:
+//   1. Unlock a real <audio> element first (iosUnmuteHack). Playing it inside
+//      the initial tap is what flips iOS's audio session from "Ambient" (gets
+//      ducked/silenced by other apps and the mute switch) to "Playback"
+//      (keeps going alongside Spotify etc).
+//   2. Create/resume the AudioContext synchronously inside that same tap —
+//      any awaited step before this breaks the "user gesture" chain on iOS.
+//   3. Keep a silent (zero-gain) oscillator running for the whole session so
+//      iOS doesn't auto-suspend an "idle" context between beeps.
+//   4. Re-resume the context (and the keep-alive) whenever the page becomes
+//      visible again, and on the next touch — visibilitychange alone isn't
+//      treated as a user gesture on iOS, so resume() there can silently fail
+//      until a real tap follows it.
+//   5. Fully close the context when a session ends, so the next session
+//      starts a fresh one inside a fresh gesture rather than reusing a stale,
+//      possibly-stuck-suspended one.
 let audioCtx = null;
-function ensureAudio(){
-  if(!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-  if(audioCtx.state==='suspended') audioCtx.resume();
+let silentKeepAliveNode = null;
+let sessionWakeLock = null;
+let audioSessionActive = false;
+
+async function ensureAudioCtx(){
+  try{
+    const unmute = document.getElementById('iosUnmuteHack');
+    if(unmute && unmute.paused){
+      unmute.volume = 0.001;
+      await unmute.play().catch(()=>{});
+    }
+  }catch(e){}
+  if(!audioCtx){
+    const Ctx = window.AudioContext || window.webkitAudioContext;
+    if(!Ctx) return null;
+    try{ audioCtx = new Ctx(); }catch(e){ return null; }
+  }
+  if(audioCtx.state !== 'running'){
+    await audioCtx.resume().catch(()=>{});
+  }
+  return audioCtx;
 }
+function startSilentKeepAlive(ctx){
+  if(silentKeepAliveNode) return;
+  try{
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    gain.gain.value = 0;
+    osc.connect(gain).connect(ctx.destination);
+    osc.start();
+    silentKeepAliveNode = osc;
+  }catch(e){}
+}
+function stopSilentKeepAlive(){
+  if(silentKeepAliveNode){ try{ silentKeepAliveNode.stop(); }catch(e){} silentKeepAliveNode = null; }
+}
+async function acquireSessionWakeLock(){
+  if(!('wakeLock' in navigator)) return;
+  try{
+    sessionWakeLock = await navigator.wakeLock.request('screen');
+    sessionWakeLock.addEventListener('release', ()=>{ sessionWakeLock = null; });
+  }catch(e){ /* non-fatal */ }
+}
+function releaseSessionWakeLock(){
+  if(sessionWakeLock){ try{ sessionWakeLock.release(); }catch(e){} sessionWakeLock = null; }
+}
+function endAudioSession(){
+  audioSessionActive = false;
+  stopSilentKeepAlive();
+  releaseSessionWakeLock();
+  if(audioCtx){ try{ audioCtx.close(); }catch(e){} audioCtx = null; }
+  try{ const u = document.getElementById('iosUnmuteHack'); if(u) u.pause(); }catch(e){}
+}
+// The page coming back to the foreground (e.g. after switching to Spotify)
+// isn't itself a user gesture, so resume() here can silently fail on iOS —
+// but it's free to try, and it covers Android/desktop reliably.
+document.addEventListener('visibilitychange', ()=>{
+  if(!audioSessionActive || document.visibilityState !== 'visible') return;
+  if(!sessionWakeLock) acquireSessionWakeLock();
+  if(audioCtx && audioCtx.state !== 'running'){
+    audioCtx.resume().then(()=>{
+      if(!silentKeepAliveNode) startSilentKeepAlive(audioCtx);
+    }).catch(()=>{});
+  }
+});
+// A touch IS a genuine user gesture on iOS, so this is the reliable fallback
+// that re-activates audio the moment you tap back into the page.
+document.addEventListener('touchstart', ()=>{
+  if(!audioSessionActive || !audioCtx) return;
+  if(audioCtx.state !== 'running'){
+    audioCtx.resume().then(()=>{
+      if(!silentKeepAliveNode) startSilentKeepAlive(audioCtx);
+    }).catch(()=>{});
+  }
+}, {passive:true});
+
 function playDrum(){
-  try{
-    ensureAudio();
-    const t0 = audioCtx.currentTime;
-    const osc = audioCtx.createOscillator();
-    const gain = audioCtx.createGain();
-    osc.type = 'sine';
-    osc.frequency.setValueAtTime(150, t0);
-    osc.frequency.exponentialRampToValueAtTime(45, t0 + 0.22);
-    gain.gain.setValueAtTime(0.0001, t0);
-    gain.gain.exponentialRampToValueAtTime(0.9, t0 + 0.012);
-    gain.gain.exponentialRampToValueAtTime(0.001, t0 + 0.32);
-    osc.connect(gain).connect(audioCtx.destination);
-    osc.start(t0);
-    osc.stop(t0 + 0.34);
-  }catch(e){ /* ignore */ }
-}
-function playDrumTriple(){
-  try{
-    ensureAudio();
-    [0, 0.16, 0.32].forEach(offset=>{
-      const t0 = audioCtx.currentTime + offset;
+  if(!audioCtx) return;
+  const schedule = ()=>{
+    try{
+      const t0 = audioCtx.currentTime;
       const osc = audioCtx.createOscillator();
       const gain = audioCtx.createGain();
       osc.type = 'sine';
       osc.frequency.setValueAtTime(150, t0);
-      osc.frequency.exponentialRampToValueAtTime(45, t0 + 0.14);
+      osc.frequency.exponentialRampToValueAtTime(45, t0 + 0.22);
       gain.gain.setValueAtTime(0.0001, t0);
-      gain.gain.exponentialRampToValueAtTime(0.9, t0 + 0.01);
-      gain.gain.exponentialRampToValueAtTime(0.001, t0 + 0.2);
+      gain.gain.exponentialRampToValueAtTime(0.9, t0 + 0.012);
+      gain.gain.exponentialRampToValueAtTime(0.001, t0 + 0.32);
       osc.connect(gain).connect(audioCtx.destination);
       osc.start(t0);
-      osc.stop(t0 + 0.22);
-    });
-  }catch(e){ /* ignore */ }
+      osc.stop(t0 + 0.34);
+    }catch(e){ /* ignore */ }
+  };
+  if(audioCtx.state !== 'running') audioCtx.resume().then(schedule).catch(()=>{});
+  else schedule();
+}
+function playDrumTriple(){
+  if(!audioCtx) return;
+  const schedule = ()=>{
+    try{
+      [0, 0.16, 0.32].forEach(offset=>{
+        const t0 = audioCtx.currentTime + offset;
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(150, t0);
+        osc.frequency.exponentialRampToValueAtTime(45, t0 + 0.14);
+        gain.gain.setValueAtTime(0.0001, t0);
+        gain.gain.exponentialRampToValueAtTime(0.9, t0 + 0.01);
+        gain.gain.exponentialRampToValueAtTime(0.001, t0 + 0.2);
+        osc.connect(gain).connect(audioCtx.destination);
+        osc.start(t0);
+        osc.stop(t0 + 0.22);
+      });
+    }catch(e){ /* ignore */ }
+  };
+  if(audioCtx.state !== 'running') audioCtx.resume().then(schedule).catch(()=>{});
+  else schedule();
 }
 
 /* ============ PLAY MODE ============ */
@@ -1074,12 +1277,73 @@ function buildSequence(){
 }
 
 document.getElementById('playBtn').addEventListener('click', ()=>{
-  sequence = buildSequence();
-  if(!sequence.length) return;
+  if(Object.keys(selections).length===0) return;
+  openPreview(selections);
+});
+
+/* ============ SESSION PREVIEW ============ */
+let previewItems = {};
+function openPreview(items){
+  previewItems = {...items};
+  selections = {...items};
+  renderBuildTab();
+  renderSessionBar();
+  renderPreviewList();
+  document.getElementById('previewOverlay').classList.add('open');
+}
+function closePreview(){
+  document.getElementById('previewOverlay').classList.remove('open');
+}
+function renderPreviewList(){
+  const ids = Object.keys(previewItems);
+  const mins = sessionMinutesFor(previewItems);
+  document.getElementById('previewTotal').textContent =
+    `${mins} min · ${ids.length} stretch${ids.length===1?'':'es'}`;
+  document.getElementById('previewList').innerHTML = ids.map(id=>{
+    const s = STRETCHES.find(x=>x.id==id);
+    const min = previewItems[id];
+    const total = min*(s.sides?2:1);
+    return `<div class="preview-item">
+      <div>
+        <div class="pi-name">${s.name}</div>
+        <div class="pi-dur">${min} min${s.sides?'/side · '+total+' min total':' hold'}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+document.getElementById('closePreviewBtn').addEventListener('click', closePreview);
+document.getElementById('startPlayBtn').addEventListener('click', ()=> startPlayback(previewItems));
+
+async function startPlayback(items){
+  selections = {...items};
+  const built = buildSequence();
+  if(!built.length) return;
+
+  // ---- synchronous audio unlock: must happen before any await ----
+  const unmute = document.getElementById('iosUnmuteHack');
+  if(unmute && unmute.paused){ unmute.volume = 0.001; unmute.play().catch(()=>{}); }
+  if(!audioCtx){
+    const Ctx = window.AudioContext || window.webkitAudioContext;
+    if(Ctx){ try{ audioCtx = new Ctx(); }catch(e){} }
+  }
+  if(audioCtx && audioCtx.state !== 'running'){ audioCtx.resume().catch(()=>{}); }
+  audioSessionActive = true;
+  acquireSessionWakeLock();
+  // ------------------------------------------------------------------
+
+  sequence = [{ready:true, seconds:5}, ...built];
   seqIndex = -1;
+  closePreview();
+  document.getElementById('playControls').style.display='flex';
   openPlayOverlay();
   advanceSegment();
-});
+
+  // Safe to await now that playback has already started.
+  if(audioCtx){
+    if(audioCtx.state !== 'running') await audioCtx.resume().catch(()=>{});
+    startSilentKeepAlive(audioCtx);
+  }
+}
 
 function openPlayOverlay(){
   document.getElementById('playOverlay').classList.add('open');
@@ -1087,6 +1351,7 @@ function openPlayOverlay(){
 function closePlayOverlay(){
   document.getElementById('playOverlay').classList.remove('open');
   clearInterval(tickTimer);
+  endAudioSession();
 }
 document.getElementById('exitPlayBtn').addEventListener('click', ()=>{
   if(confirm('End this session?')) closePlayOverlay();
@@ -1104,29 +1369,36 @@ function advanceSegment(){
   segmentDurationMs = seg.seconds*1000;
   remainingMs = segmentDurationMs;
   isPaused = false;
-  playDrum();
+  if(!seg.ready && !seg.rest){
+    playDrum(); // 1 drum: starts a stretch (also marks the end of a transition, if one preceded it)
+  }
   renderSegmentUI(seg);
   startTicking();
 }
 
 function stretchCountLabel(){
-  const totalStretches = sequence.filter(s=>!s.rest).length;
-  const doneIndex = sequence.slice(0,seqIndex+1).filter(s=>!s.rest).length;
+  const totalStretches = sequence.filter(s=>!s.rest && !s.ready).length;
+  const doneIndex = sequence.slice(0,seqIndex+1).filter(s=>!s.rest && !s.ready).length;
   return `Stretch ${Math.max(doneIndex,1)} of ${totalStretches}`;
 }
 
 function renderSegmentUI(seg){
-  document.getElementById('progressText').textContent = stretchCountLabel();
+  document.getElementById('progressText').textContent = seg.ready ? 'Get ready' : stretchCountLabel();
   document.getElementById('pauseBtn').textContent = '❚❚';
   const nameEl = document.getElementById('playStretchName');
   const sideEl = document.getElementById('playSideTag');
   const restTag = document.getElementById('restTag');
   const infoBtn = document.getElementById('playInfoBtn');
 
-  if(seg.rest){
+  if(seg.ready){
+    restTag.style.display='none';
+    nameEl.textContent = 'Get ready';
+    sideEl.textContent = 'Starting shortly';
+    infoBtn.style.display='none';
+  } else if(seg.rest){
     restTag.style.display='block';
     nameEl.textContent = 'Rest';
-    sideEl.textContent = 'Get ready for the next stretch';
+    sideEl.textContent = 'Next up in a moment';
     infoBtn.style.display='none';
   } else {
     restTag.style.display='none';
@@ -1158,7 +1430,10 @@ function startTicking(){
     if(remainingMs <= 0){
       remainingMs = 0;
       updateTimerDisplay();
-      playDrumTriple();
+      const endingSeg = sequence[seqIndex];
+      if(endingSeg && !endingSeg.ready && !endingSeg.rest){
+        playDrumTriple(); // 3 quick drums: ends the stretch and starts the transition (or the session, if last)
+      }
       advanceSegment();
       return;
     }
@@ -1179,7 +1454,10 @@ function updateTimerDisplay(){
 document.getElementById('pauseBtn').addEventListener('click', ()=>{
   isPaused = !isPaused;
   document.getElementById('pauseBtn').textContent = isPaused ? '▶' : '❚❚';
-  if(!isPaused) lastTick = Date.now();
+  if(!isPaused){
+    lastTick = Date.now();
+    ensureAudioCtx().then(ctx=>{ if(ctx && !silentKeepAliveNode) startSilentKeepAlive(ctx); });
+  }
 });
 document.getElementById('skipFwdBtn').addEventListener('click', ()=>{
   advanceSegment();
@@ -1191,6 +1469,7 @@ document.getElementById('skipBackBtn').addEventListener('click', ()=>{
 
 function showComplete(){
   clearInterval(tickTimer);
+  endAudioSession();
   const body = document.getElementById('playBody');
   document.getElementById('progressText').textContent = 'Session complete';
   document.getElementById('playControls').style.display='none';
@@ -1230,11 +1509,6 @@ function closeDetailsSheet(){
   document.getElementById('scrim').classList.remove('open');
 }
 document.getElementById('scrim').addEventListener('click', closeDetailsSheet);
-
-/* Rebuild play controls visibility whenever overlay opens fresh */
-document.getElementById('playBtn').addEventListener('click', ()=>{
-  document.getElementById('playControls').style.display='flex';
-});
 
 /* ============ INIT ============ */
 renderBuildTab();
