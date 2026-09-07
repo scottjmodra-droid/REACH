@@ -6,6 +6,8 @@
   v1.2  Beep pattern: single drum at segment start, triple quick drum at segment end
   v1.3  Added 19 stretch illustrations (RepDB) + attribution footer
   v1.4  Added version tag in header
+  v1.5  Removed stretch images (inaccurate matches), removed muscle subtitle from
+        cards, tightened card padding, and shrank duration pill size
 -->
 <html lang="en">
 <head>
@@ -151,7 +153,7 @@
     background:var(--paper);
     border:1px solid var(--line);
     border-radius:var(--radius);
-    padding:14px 15px 13px;
+    padding:10px 13px 10px;
     transition:border-color .15s ease, box-shadow .15s ease;
   }
   .stretch-card.selected{
@@ -166,18 +168,12 @@
     gap:8px;
   }
   .stretch-card h3{
-    font-size:15.5px;
+    font-size:15px;
     font-weight:600;
-    margin:0 0 3px;
+    margin:0;
     line-height:1.3;
     color:var(--ink);
     font-family:'Inter',sans-serif;
-  }
-  .stretch-card .muscles{
-    font-size:12.5px;
-    color:var(--ink-faint);
-    line-height:1.4;
-    margin:0;
   }
   .info-btn{
     background:var(--sage-pale);
@@ -216,25 +212,13 @@
   .details h4:first-child{margin-top:0;}
   .details ul{margin:0;padding-left:18px;}
   .details li{margin-bottom:3px;}
-  .stretch-img-wrap{margin-top:12px;}
-  .stretch-img-wrap img{
-    width:100%;max-width:220px;display:block;margin:0 auto;
-    border-radius:10px;border:1px solid var(--line);
-  }
-  .stretch-img-note{
-    font-size:11px;color:var(--ink-faint);text-align:center;margin-top:5px;
-  }
-  .footer-attr{
-    max-width:920px;margin:30px auto 0;padding:0 20px 30px;
-    font-size:12px;color:var(--ink-faint);text-align:center;
-  }
-  .footer-attr a{color:var(--ink-soft);}
+
 
   .dur-row{
     display:flex;
     align-items:center;
-    gap:8px;
-    margin-top:11px;
+    gap:6px;
+    margin-top:8px;
   }
   .dur-row .label{
     font-size:11.5px;
@@ -245,10 +229,10 @@
     border:1px solid var(--line);
     background:var(--white);
     color:var(--ink);
-    font-size:13px;
+    font-size:11.5px;
     font-weight:600;
-    padding:6px 11px;
-    border-radius:20px;
+    padding:3px 8px;
+    border-radius:14px;
   }
   .dur-chip:hover{border-color:var(--sage);}
   .dur-chip.active{
@@ -566,7 +550,7 @@
       </svg>
     </div>
     <h1>Reach</h1>
-    <span class="version-tag" id="versionTag">v1.4</span>
+    <span class="version-tag" id="versionTag">v1.5</span>
   </div>
   <p class="tagline">Build a stretching session from 31 static stretches, then follow along with timed holds and a quiet drum cue between each one.</p>
 </header>
@@ -628,8 +612,6 @@
 </div>
 <div class="scrim" id="scrim"></div>
 <div class="play-details-sheet" id="detailsSheet"></div>
-
-<div class="footer-attr">Exercise illustrations by <a href="https://repdb.co" target="_blank" rel="noopener">RepDB (repdb.co)</a></div>
 
 <script>
 /* ============ DATA ============ */
@@ -760,28 +742,6 @@ const STRETCHES = [
  how:["Stand in a staggered stance and place one arm at shoulder height, palm and inner arm on a doorframe.","Lean forward through the open chest space, keeping the shoulder down.","Adjust hand height to target different fibers.","Hold, then switch sides."]}
 ];
 
-const IMAGES = {
-  1:  {file:"images/low-lunge-main.webp", approx:true},
-  2:  {file:"images/standing-forward-fold-main.webp", approx:false},
-  4:  {file:"images/standing-calf-stretch-main.webp", approx:true},
-  5:  {file:"images/overhead-triceps-stretch-main.webp", approx:false},
-  6:  {file:"images/standing-quad-stretch-main.webp", approx:false},
-  7:  {file:"images/pigeon-stretch-main.webp", approx:true},
-  12: {file:"images/kneeling-hip-flexor-stretch-main.webp", approx:false},
-  13: {file:"images/standing-side-bend-main.webp", approx:true},
-  15: {file:"images/happy-baby-main.webp", approx:false},
-  16: {file:"images/sphinx-pose-main.webp", approx:false},
-  17: {file:"images/puppy-pose-main.webp", approx:false},
-  18: {file:"images/knee-to-chest-stretch-main.webp", approx:false},
-  19: {file:"images/supine-spinal-twist-main.webp", approx:false},
-  21: {file:"images/low-lunge-to-half-split-peak.webp", approx:true},
-  23: {file:"images/butterfly-stretch-main.webp", approx:true},
-  27: {file:"images/cross-body-shoulder-stretch-main.webp", approx:false},
-  28: {file:"images/cat-cow-main.webp", approx:false},
-  29: {file:"images/kneeling-wrist-stretch-main.webp", approx:false},
-  31: {file:"images/doorway-chest-stretch-main.webp", approx:false}
-};
-
 const AREA_ORDER = ["Hips & Glutes","Hamstrings & Legs","Back & Spine","Shoulders & Chest","Neck","Arms & Wrists"];
 const DURATIONS = [1,2,3];
 
@@ -807,15 +767,6 @@ function renderBuildTab(){
   });
 }
 
-function imageBlockHTML(s){
-  const img = IMAGES[s.id];
-  if(!img) return '';
-  return `<div class="stretch-img-wrap">
-    <img src="${img.file}" alt="${s.name} illustration" loading="lazy">
-    ${img.approx ? '<div class="stretch-img-note">Closest available reference pose — swap out if you\'d like an exact match</div>' : ''}
-  </div>`;
-}
-
 function renderCard(s){
   const card = document.createElement('div');
   card.className = 'stretch-card' + (selections[s.id] ? ' selected' : '');
@@ -830,7 +781,6 @@ function renderCard(s){
     <div class="row-top">
       <div>
         <h3>${s.name}</h3>
-        <p class="muscles">${s.muscles.slice(0,3).join(', ')}</p>
       </div>
       <button class="info-btn" aria-label="Details">i</button>
     </div>
@@ -841,7 +791,6 @@ function renderCard(s){
       <ul>${s.muscles.map(x=>`<li>${x}</li>`).join('')}</ul>
       <h4>Key benefits</h4>
       <ul><li>${s.benefits}</li></ul>
-      ${imageBlockHTML(s)}
     </div>
     <div class="dur-row">
       <span class="label">Duration</span>
@@ -1260,7 +1209,6 @@ function openDetailsSheet(s){
     <ul>${s.muscles.map(x=>`<li>${x}</li>`).join('')}</ul>
     <h4>Key benefits</h4>
     <ul><li>${s.benefits}</li></ul>
-    ${imageBlockHTML(s)}
     <button class="sheet-close">Close</button>
   `;
   sheet.classList.add('open');
