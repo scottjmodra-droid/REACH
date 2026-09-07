@@ -75,6 +75,12 @@
   v2.8  Renamed "Forward Fold Hamstring Stretch" to "Hurdler Hamstring
         Stretch" with new seated how-to steps, and corrected it to a
         both-sides stretch (was incorrectly marked single hold)
+  v2.9  Flipped the color scheme: dark forest green backgrounds throughout
+        (matching the play screen's look), with beige for headings and body
+        text, and the mossy greens/amber kept as accents. Added "Expand all"
+        and "Collapse all" buttons to the build tab toolbar so every open
+        info panel can be closed in one tap. Tightened the header and tab
+        spacing so there's less empty space above the stretch list
 -->
 <html lang="en">
 <head>
@@ -94,23 +100,23 @@
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
   :root{
-    --bg:#F3F2E8;
-    --bg-alt:#EAEEDF;
-    --paper:#FBFAF4;
-    --ink:#20301E;
-    --ink-soft:#55614C;
-    --ink-faint:#8B9483;
-    --moss:#3E5A38;
-    --moss-dark:#2A3F26;
-    --moss-deep:#1D2E1B;
+    --bg:#1E3019;
+    --bg-alt:#24391F;
+    --paper:#26401F;
+    --ink:#F4F1E6;
+    --ink-soft:#C9D2AE;
+    --ink-faint:#93A184;
+    --moss:#6FA85A;
+    --moss-dark:#8FC97A;
+    --moss-deep:#14210F;
     --sage:#9EB48F;
-    --sage-light:#DCE6CC;
-    --sage-pale:#EEF2E2;
-    --line:#D8D9C9;
+    --sage-light:#34502D;
+    --sage-pale:#2A4325;
+    --line:#3B5233;
     --amber:#C89A4C;
     --white:#FFFFFF;
     --radius:14px;
-    --shadow:0 1px 2px rgba(32,48,30,0.06), 0 4px 14px rgba(32,48,30,0.06);
+    --shadow:0 1px 2px rgba(0,0,0,0.25), 0 4px 14px rgba(0,0,0,0.25);
   }
   *{box-sizing:border-box;}
   html,body{margin:0;padding:0;}
@@ -127,7 +133,7 @@
 
   /* ---------- Header ---------- */
   header.top{
-    padding:28px 20px 18px;
+    padding:16px 20px 8px;
     max-width:920px;
     margin:0 auto;
   }
@@ -148,7 +154,7 @@
     font-size:26px;
     font-weight:600;
     margin:0;
-    color:var(--moss-deep);
+    color:var(--ink);
     letter-spacing:-0.01em;
   }
   .version-tag{
@@ -166,7 +172,7 @@
     display:flex;
     gap:6px;
     max-width:920px;
-    margin:18px auto 0;
+    margin:8px auto 0;
     padding:0 20px;
   }
   nav.tabs button{
@@ -179,7 +185,7 @@
     margin-right:18px;
   }
   nav.tabs button.active{
-    color:var(--moss-deep);
+    color:var(--ink);
     border-bottom-color:var(--moss);
   }
 
@@ -192,21 +198,31 @@
   /* ---------- Build tab toolbar ---------- */
   .build-toolbar{
     display:flex;
-    justify-content:flex-end;
-    padding:14px 0 0;
+    justify-content:space-between;
+    align-items:center;
+    gap:8px;
+    padding:8px 0 0;
   }
-  .build-toolbar button.clear-all{
+  .build-toolbar .toolbar-left{
+    display:flex;
+    gap:8px;
+  }
+  .build-toolbar button{
     background:none;
     border:1px solid var(--line);
-    color:#A5493C;
+    color:var(--ink-soft);
     padding:7px 14px;
     border-radius:20px;
     font-size:12.5px;
     font-weight:600;
   }
+  .build-toolbar button.clear-all{
+    color:#A5493C;
+    margin-left:auto;
+  }
 
   /* ---------- Area sections ---------- */
-  .area-section{margin-top:30px;}
+  .area-section{margin-top:22px;}
   .area-head{
     display:flex;
     align-items:center;
@@ -217,7 +233,7 @@
     font-size:19px;
     font-weight:600;
     margin:0;
-    color:var(--moss-deep);
+    color:var(--ink);
   }
   .area-head .count{
     font-size:12.5px;
@@ -345,7 +361,7 @@
   }
   .dur-chip{
     border:1px solid var(--line);
-    background:var(--white);
+    background:var(--bg-alt);
     color:var(--ink);
     font-size:10.5px;
     font-weight:600;
@@ -437,11 +453,12 @@
   .playlist-card .actions{display:flex;gap:8px;flex-shrink:0;}
   .playlist-card button{
     border:1px solid var(--line);
-    background:var(--white);
+    background:var(--bg-alt);
     padding:8px 13px;
     border-radius:20px;
     font-size:13px;
     font-weight:600;
+    color:var(--ink);
   }
   .playlist-card button.play-load{border-color:var(--moss);color:var(--moss-dark);}
   .playlist-card button.del{color:#A5493C;}
@@ -450,7 +467,7 @@
   .playlist-card .name-edit input{
     flex:1;font-family:'Fraunces',serif;font-size:16px;
     border:1px solid var(--sage);border-radius:8px;padding:6px 9px;
-    background:var(--white);color:var(--ink);
+    background:var(--bg-alt);color:var(--ink);
   }
   .playlist-card .name-edit button{
     border:none;background:var(--moss);color:var(--white);
@@ -477,11 +494,11 @@
     width:100%;
     font-family:'Fraunces',serif;
     font-size:16px;
-    border:none;
+    border:1px solid rgba(255,255,255,0.25);
     border-radius:8px;
     padding:8px 10px;
-    background:var(--white);
-    color:var(--ink);
+    background:rgba(255,255,255,0.08);
+    color:var(--white);
   }
   .save-panel .save-actions{
     display:flex;
@@ -522,7 +539,7 @@
     margin:0 auto;
     padding:26px 20px 4px;
   }
-  .preview-top h2{font-size:21px;margin:0;color:var(--moss-deep);}
+  .preview-top h2{font-size:21px;margin:0;color:var(--ink);}
   .preview-top button.close{
     background:var(--sage-pale);
     border:1px solid var(--line);
@@ -836,7 +853,7 @@
       </svg>
     </div>
     <h1>Reach</h1>
-    <span class="version-tag" id="versionTag">v2.8</span>
+    <span class="version-tag" id="versionTag">v2.9</span>
   </div>
 </header>
 
@@ -1100,17 +1117,30 @@ let selections = {};
 function renderBuildTab(){
   const root = document.getElementById('build-tab');
   root.innerHTML = '';
-  if(Object.keys(selections).length){
-    const toolbar = document.createElement('div');
-    toolbar.className = 'build-toolbar';
-    toolbar.innerHTML = `<button class="clear-all" id="clearAllBtn">Clear all</button>`;
-    toolbar.querySelector('#clearAllBtn').addEventListener('click', ()=>{
+  const toolbar = document.createElement('div');
+  toolbar.className = 'build-toolbar';
+  toolbar.innerHTML = `
+    <div class="toolbar-left">
+      <button id="expandAllBtn">Expand all</button>
+      <button id="collapseAllBtn">Collapse all</button>
+    </div>
+    ${Object.keys(selections).length ? '<button class="clear-all" id="clearAllBtn">Clear all</button>' : ''}
+  `;
+  toolbar.querySelector('#expandAllBtn').addEventListener('click', ()=>{
+    root.querySelectorAll('.details').forEach(d=>d.classList.add('open'));
+  });
+  toolbar.querySelector('#collapseAllBtn').addEventListener('click', ()=>{
+    root.querySelectorAll('.details').forEach(d=>d.classList.remove('open'));
+  });
+  const clearAllBtn = toolbar.querySelector('#clearAllBtn');
+  if(clearAllBtn){
+    clearAllBtn.addEventListener('click', ()=>{
       selections = {};
       renderBuildTab();
       renderSessionBar();
     });
-    root.appendChild(toolbar);
   }
+  root.appendChild(toolbar);
   AREA_ORDER.forEach(area=>{
     const items = STRETCHES.filter(s=>s.area===area);
     if(!items.length) return;
