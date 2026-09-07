@@ -37,6 +37,12 @@
         stretch" panel browsing everything not yet in the session. Removed
         the old "Review" drawer/button from the build tab, since preview now
         covers that
+  v2.3  Fixed the "Save playlist" panel running off the edge of narrow phone
+        screens (label/input/buttons now stack instead of cramming into one
+        row). Added a "Clear all" button at the top of Build a session.
+        Playing a saved playlist (renamed "Load" to "Play") no longer loads
+        its stretches into Build a session — it opens straight into its own
+        editable preview, leaving whatever you're separately building alone
 -->
 <html lang="en">
 <head>
@@ -149,6 +155,22 @@
     max-width:920px;
     margin:0 auto;
     padding:8px 20px 40px;
+  }
+
+  /* ---------- Build tab toolbar ---------- */
+  .build-toolbar{
+    display:flex;
+    justify-content:flex-end;
+    padding:14px 0 0;
+  }
+  .build-toolbar button.clear-all{
+    background:none;
+    border:1px solid var(--line);
+    color:#A5493C;
+    padding:7px 14px;
+    border-radius:20px;
+    font-size:12.5px;
+    font-weight:600;
   }
 
   /* ---------- Area sections ---------- */
@@ -354,7 +376,7 @@
     font-size:13px;
     font-weight:600;
   }
-  .playlist-card button.load{border-color:var(--moss);color:var(--moss-dark);}
+  .playlist-card button.play-load{border-color:var(--moss);color:var(--moss-dark);}
   .playlist-card button.del{color:#A5493C;}
   .playlist-card button.rename{color:var(--ink-soft);}
   .playlist-card .name-edit{display:flex;gap:8px;align-items:center;flex:1;}
@@ -380,12 +402,12 @@
     border-radius:12px;
     padding:12px 14px;
     display:flex;
+    flex-direction:column;
     gap:10px;
-    align-items:center;
   }
-  .save-panel label{font-size:12.5px;color:#B9C7AE;white-space:nowrap;}
+  .save-panel label{font-size:12.5px;color:#B9C7AE;}
   .save-panel input{
-    flex:1;
+    width:100%;
     font-family:'Fraunces',serif;
     font-size:16px;
     border:none;
@@ -393,6 +415,12 @@
     padding:8px 10px;
     background:var(--white);
     color:var(--ink);
+  }
+  .save-panel .save-actions{
+    display:flex;
+    justify-content:flex-end;
+    gap:14px;
+    align-items:center;
   }
   .save-panel button.confirm{
     background:var(--amber);border:none;color:var(--moss-deep);
@@ -708,7 +736,7 @@
       </svg>
     </div>
     <h1>Reach</h1>
-    <span class="version-tag" id="versionTag">v2.2</span>
+    <span class="version-tag" id="versionTag">v2.3</span>
   </div>
 </header>
 
@@ -725,8 +753,10 @@
     <div class="box">
       <label>Playlist name</label>
       <input type="text" id="savePanelInput">
-      <button class="confirm" id="savePanelConfirm">Save</button>
-      <button class="cancel" id="savePanelCancel">Cancel</button>
+      <div class="save-actions">
+        <button class="cancel" id="savePanelCancel">Cancel</button>
+        <button class="confirm" id="savePanelConfirm">Save</button>
+      </div>
     </div>
   </div>
   <div class="row">
@@ -927,6 +957,18 @@ let selections = {};
 function renderBuildTab(){
   const root = document.getElementById('build-tab');
   root.innerHTML = '';
+  if(Object.keys(selections).length){
+    const toolbar = document.createElement('div');
+    toolbar.className = 'build-toolbar';
+    toolbar.innerHTML = `<button class="clear-all" id="clearAllBtn">Clear all</button>`;
+    toolbar.querySelector('#clearAllBtn').addEventListener('click', ()=>{
+      if(!confirm('Clear all selected stretches?')) return;
+      selections = {};
+      renderBuildTab();
+      renderSessionBar();
+    });
+    root.appendChild(toolbar);
+  }
   AREA_ORDER.forEach(area=>{
     const items = STRETCHES.filter(s=>s.area===area);
     if(!items.length) return;
@@ -1067,7 +1109,7 @@ function confirmSave(){
   list.push(newEntry);
   savePlaylists(list);
   document.getElementById('savePanel').classList.remove('open');
-  openPreview(newEntry.items);
+  openPreview(newEntry.items, true);
 }
 document.getElementById('savePanelConfirm').addEventListener('click', confirmSave);
 document.getElementById('savePanelInput').addEventListener('keydown', (e)=>{
@@ -1092,7 +1134,7 @@ function renderPlaylistsTab(){
         <div class="meta">${Object.keys(p.items).length} stretches · ${mins} min</div>
       </div>
       <div class="actions">
-        <button class="load">Load</button>
+        <button class="play-load">Play</button>
         <button class="rename">Rename</button>
         <button class="del">Delete</button>
       </div>
@@ -1101,11 +1143,11 @@ function renderPlaylistsTab(){
 
   root.querySelectorAll('.playlist-card').forEach(card=>{
     const id = card.dataset.id;
-    card.querySelector('.load').addEventListener('click', ()=>{
+    card.querySelector('.play-load').addEventListener('click', ()=>{
       const list = loadPlaylists();
       const p = list.find(x=>x.id===id);
       if(!p) return;
-      openPreview(p.items);
+      openPreview(p.items, false); // false: don't touch Build a session's selections
     });
     card.querySelector('.del').addEventListener('click', ()=>{
       let list = loadPlaylists();
@@ -1322,12 +1364,12 @@ let tickTimer = null;
 let isPaused = false;
 let lastTick = null;
 
-function buildSequence(){
+function buildSequence(items){
   const seq = [];
-  const ids = Object.keys(selections);
+  const ids = Object.keys(items);
   ids.forEach(id=>{
     const s = STRETCHES.find(x=>x.id==id);
-    const min = selections[id];
+    const min = items[id];
     if(s.sides){
       seq.push({stretch:s, side:'Right side', seconds:min*60});
       seq.push({rest:true, seconds:10});
@@ -1345,7 +1387,7 @@ function buildSequence(){
 
 document.getElementById('playBtn').addEventListener('click', ()=>{
   if(Object.keys(selections).length===0) return;
-  openPreview(selections);
+  openPreview(selections, true);
 });
 
 /* ============ SESSION PREVIEW (fully editable) ============ */
@@ -1353,23 +1395,28 @@ document.getElementById('playBtn').addEventListener('click', ()=>{
 // fine-tune a session: change a duration, remove a stretch, or add another,
 // all before hitting Play.
 let previewItems = {};
+let previewSyncBuildTab = true;
 let previewAddOpen = false;
 
-function openPreview(items){
+function openPreview(items, syncBuildTab=true){
   previewItems = {...items};
+  previewSyncBuildTab = syncBuildTab;
   previewAddOpen = false;
-  syncSelectionsFromPreview();
+  syncPreviewChange();
   document.getElementById('previewOverlay').classList.add('open');
 }
 function closePreview(){
   document.getElementById('previewOverlay').classList.remove('open');
 }
-// Keep the build tab + session bar in sync with whatever is edited here, so
-// nothing looks stale if the user backs out of preview without playing.
-function syncSelectionsFromPreview(){
-  selections = {...previewItems};
-  renderBuildTab();
-  renderSessionBar();
+// Edits made here only write back to Build a session when this preview was
+// opened FROM Build a session — playing a saved playlist previews/edits its
+// own copy without touching whatever you're separately building.
+function syncPreviewChange(){
+  if(previewSyncBuildTab){
+    selections = {...previewItems};
+    renderBuildTab();
+    renderSessionBar();
+  }
   renderPreviewList();
 }
 
@@ -1405,13 +1452,13 @@ function renderPreviewList(){
     itemsList.querySelectorAll('.dur-chip').forEach(btn=>{
       btn.addEventListener('click', ()=>{
         previewItems[btn.dataset.id] = parseInt(btn.dataset.min, 10);
-        syncSelectionsFromPreview();
+        syncPreviewChange();
       });
     });
     itemsList.querySelectorAll('.pi-remove').forEach(btn=>{
       btn.addEventListener('click', ()=>{
         delete previewItems[btn.dataset.id];
-        syncSelectionsFromPreview();
+        syncPreviewChange();
       });
     });
   }
@@ -1443,7 +1490,7 @@ function renderPreviewAddPanel(){
   panel.querySelectorAll('button.add').forEach(btn=>{
     btn.addEventListener('click', ()=>{
       previewItems[btn.dataset.id] = 1;
-      syncSelectionsFromPreview();
+      syncPreviewChange();
     });
   });
 }
@@ -1456,8 +1503,7 @@ document.getElementById('closePreviewBtn').addEventListener('click', closePrevie
 document.getElementById('startPlayBtn').addEventListener('click', ()=> startPlayback(previewItems));
 
 async function startPlayback(items){
-  selections = {...items};
-  const built = buildSequence();
+  const built = buildSequence(items);
   if(!built.length) return;
 
   // ---- synchronous audio unlock: must happen before any await ----
