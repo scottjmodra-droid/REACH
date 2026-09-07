@@ -21,6 +21,17 @@
         alive so the AudioContext isn't auto-suspended, re-resumes audio on
         return-to-tab/next-touch/resume-from-pause, holds a screen wake lock
         during playback, and fully closes the context when a session ends
+  v1.9  Seeded a one-off recommended playlist, "Post Run Stretch" (hamstrings,
+        quads, calves, hip flexors, glutes — 2 min each), added once to
+        My Playlists on next load; won't reappear if deleted or renamed
+  v2.0  Seeded three more 20-min recommended playlists: "Full Body Stretch",
+        "Back Release", and "Upper Body Stretch" — each added once to
+        My Playlists, same one-time-only behaviour as Post Run Stretch
+  v2.1  Pumped up the drum beep volume — routed through a hotter gain stage
+        into a compressor/limiter (rather than just cranking a plain gain,
+        which would clip/crackle), so it's noticeably louder without turning
+        harsh, plus a slightly higher starting pitch for more presence
+        on phone speakers
 -->
 <html lang="en">
 <head>
@@ -645,7 +656,7 @@
       </svg>
     </div>
     <h1>Reach</h1>
-    <span class="version-tag" id="versionTag">v1.8</span>
+    <span class="version-tag" id="versionTag">v2.1</span>
   </div>
 </header>
 
@@ -1125,6 +1136,8 @@ function renderPlaylistsTab(){
 //      starts a fresh one inside a fresh gesture rather than reusing a stale,
 //      possibly-stuck-suspended one.
 let audioCtx = null;
+let masterGain = null;
+let compressorNode = null;
 let silentKeepAliveNode = null;
 let sessionWakeLock = null;
 let audioSessionActive = false;
@@ -1142,6 +1155,7 @@ async function ensureAudioCtx(){
     if(!Ctx) return null;
     try{ audioCtx = new Ctx(); }catch(e){ return null; }
   }
+  ensureAudioGraph(audioCtx);
   if(audioCtx.state !== 'running'){
     await audioCtx.resume().catch(()=>{});
   }
@@ -1161,6 +1175,27 @@ function startSilentKeepAlive(ctx){
 function stopSilentKeepAlive(){
   if(silentKeepAliveNode){ try{ silentKeepAliveNode.stop(); }catch(e){} silentKeepAliveNode = null; }
 }
+// A compressor/limiter after a hotter gain stage makes the drum noticeably
+// louder and punchier on a phone speaker without the harsh crackle you'd get
+// from just cranking a plain GainNode past ~1.0.
+function ensureAudioGraph(ctx){
+  if(compressorNode) return;
+  try{
+    compressorNode = ctx.createDynamicsCompressor();
+    compressorNode.threshold.value = -24;
+    compressorNode.knee.value = 24;
+    compressorNode.ratio.value = 12;
+    compressorNode.attack.value = 0.003;
+    compressorNode.release.value = 0.2;
+    masterGain = ctx.createGain();
+    masterGain.gain.value = 1.8;
+    masterGain.connect(compressorNode).connect(ctx.destination);
+  }catch(e){ masterGain = null; compressorNode = null; }
+}
+function drumOutput(ctx){
+  ensureAudioGraph(ctx);
+  return masterGain || ctx.destination;
+}
 async function acquireSessionWakeLock(){
   if(!('wakeLock' in navigator)) return;
   try{
@@ -1176,6 +1211,8 @@ function endAudioSession(){
   stopSilentKeepAlive();
   releaseSessionWakeLock();
   if(audioCtx){ try{ audioCtx.close(); }catch(e){} audioCtx = null; }
+  masterGain = null;
+  compressorNode = null;
   try{ const u = document.getElementById('iosUnmuteHack'); if(u) u.pause(); }catch(e){}
 }
 // The page coming back to the foreground (e.g. after switching to Spotify)
@@ -1209,12 +1246,12 @@ function playDrum(){
       const osc = audioCtx.createOscillator();
       const gain = audioCtx.createGain();
       osc.type = 'sine';
-      osc.frequency.setValueAtTime(150, t0);
-      osc.frequency.exponentialRampToValueAtTime(45, t0 + 0.22);
+      osc.frequency.setValueAtTime(170, t0);
+      osc.frequency.exponentialRampToValueAtTime(55, t0 + 0.22);
       gain.gain.setValueAtTime(0.0001, t0);
-      gain.gain.exponentialRampToValueAtTime(0.9, t0 + 0.012);
+      gain.gain.exponentialRampToValueAtTime(1.3, t0 + 0.012);
       gain.gain.exponentialRampToValueAtTime(0.001, t0 + 0.32);
-      osc.connect(gain).connect(audioCtx.destination);
+      osc.connect(gain).connect(drumOutput(audioCtx));
       osc.start(t0);
       osc.stop(t0 + 0.34);
     }catch(e){ /* ignore */ }
@@ -1231,12 +1268,12 @@ function playDrumTriple(){
         const osc = audioCtx.createOscillator();
         const gain = audioCtx.createGain();
         osc.type = 'sine';
-        osc.frequency.setValueAtTime(150, t0);
-        osc.frequency.exponentialRampToValueAtTime(45, t0 + 0.14);
+        osc.frequency.setValueAtTime(170, t0);
+        osc.frequency.exponentialRampToValueAtTime(55, t0 + 0.14);
         gain.gain.setValueAtTime(0.0001, t0);
-        gain.gain.exponentialRampToValueAtTime(0.9, t0 + 0.01);
+        gain.gain.exponentialRampToValueAtTime(1.3, t0 + 0.01);
         gain.gain.exponentialRampToValueAtTime(0.001, t0 + 0.2);
-        osc.connect(gain).connect(audioCtx.destination);
+        osc.connect(gain).connect(drumOutput(audioCtx));
         osc.start(t0);
         osc.stop(t0 + 0.22);
       });
@@ -1326,6 +1363,7 @@ async function startPlayback(items){
     const Ctx = window.AudioContext || window.webkitAudioContext;
     if(Ctx){ try{ audioCtx = new Ctx(); }catch(e){} }
   }
+  if(audioCtx) ensureAudioGraph(audioCtx);
   if(audioCtx && audioCtx.state !== 'running'){ audioCtx.resume().catch(()=>{}); }
   audioSessionActive = true;
   acquireSessionWakeLock();
@@ -1509,6 +1547,58 @@ function closeDetailsSheet(){
   document.getElementById('scrim').classList.remove('open');
 }
 document.getElementById('scrim').addEventListener('click', closeDetailsSheet);
+
+/* ============ SEED: recommended playlists ============ */
+// Each has its own flag so it's offered exactly once and never reappears if
+// deleted or renamed, and adding a new recommended playlist later never
+// re-triggers the ones already seeded.
+const SEED_PLAYLISTS = [
+  {
+    flag: 'reach_seeded_post_run_v1',
+    name: 'Post Run Stretch',
+    // Forward Fold Hamstring Stretch, Standing Quad Stretch,
+    // Toes on Wall Calf Stretch, Lunging Hip Flexor Stretch, Figure Four Stretch
+    items: {2:2, 6:2, 4:2, 12:2, 7:2}
+  },
+  {
+    flag: 'reach_seeded_full_body_v1',
+    name: 'Full Body Stretch',
+    // Forward Fold Hamstring, Standing Quad, Lunging Hip Flexor, Cat Cow,
+    // Kneeling Side Bend, Seated Neck Release, Chest and Shoulder, Triceps
+    items: {2:2, 6:2, 12:2, 28:2, 13:1, 20:1, 24:2, 5:1}
+  },
+  {
+    flag: 'reach_seeded_back_release_v1',
+    name: 'Back Release',
+    // Kneeling Side Bend, Sphinx Pose, Extended Puppy Pose, Knee to Chest,
+    // Reclined Spinal Twist, Pretzel Stretch, Upper Back Stretch, Cat Cow
+    items: {13:2, 16:1, 17:1, 18:2, 19:2, 22:2, 25:1, 28:1}
+  },
+  {
+    flag: 'reach_seeded_upper_body_v1',
+    name: 'Upper Body Stretch',
+    // Lying Pectoral, Seated Shoulder Squeeze, Shoulder Stretch Across Chest,
+    // Standing Doorway Pectoral, Seated Neck Release, Triceps, Biceps, Upper Back
+    items: {9:2, 11:2, 27:1, 31:2, 20:1, 5:1, 26:2, 25:2}
+  },
+];
+function seedDefaultPlaylists(){
+  let list = null;
+  SEED_PLAYLISTS.forEach(seed=>{
+    if(localStorage.getItem(seed.flag)) return;
+    localStorage.setItem(seed.flag, '1');
+    if(!list) list = loadPlaylists();
+    if(list.some(p=>p.name===seed.name)) return;
+    list.push({
+      id: 'seed-' + seed.flag + '-' + Date.now().toString(),
+      name: seed.name,
+      createdAt: new Date().toISOString(),
+      items: seed.items
+    });
+  });
+  if(list) savePlaylists(list);
+}
+seedDefaultPlaylists();
 
 /* ============ INIT ============ */
 renderBuildTab();
