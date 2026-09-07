@@ -106,6 +106,9 @@
         text-length-based pause instead. Made the min/side duration chips
         taller for easier tapping in Build a session (session preview keeps
         its original compact size)
+  v2.14 Removed the text-to-speech feature (stretch-name announcements and
+        the Voice picker) — unreliable on iPhone. Settings now covers just
+        appearance, beep volume, and get-ready/transition length
 -->
 <html lang="en">
 <head>
@@ -997,7 +1000,7 @@
       </svg>
     </div>
     <h1>Reach</h1>
-    <span class="version-tag" id="versionTag">v2.13</span>
+    <span class="version-tag" id="versionTag">v2.14</span>
   </div>
   <button class="header-icon-btn" id="settingsGearBtn" aria-label="Settings" title="Settings">
     <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -1117,16 +1120,6 @@
     <div class="settings-label">Beep volume</div>
     <input type="range" id="volumeSlider" min="0" max="100" step="10">
     <span class="settings-value" id="volumeValue">100%</span>
-  </div>
-
-  <div class="settings-row">
-    <div class="settings-label">Speak stretch names</div>
-    <input type="checkbox" id="ttsToggle">
-  </div>
-
-  <div class="settings-row">
-    <div class="settings-label">Voice</div>
-    <select id="voiceSelect"></select>
   </div>
 
   <div class="settings-row">
@@ -1436,11 +1429,11 @@ function renderSessionBar(){
 
 /* ============ SETTINGS ============ */
 // One settings sheet (gear icon, top right) covers appearance plus everything
-// that affects a session: beep volume, spoken stretch names, and the get-ready/
-// transition lengths. Every default below reproduces the app's old fixed
-// behaviour exactly, so nothing changes for anyone until they open Settings.
+// that affects a session: beep volume and the get-ready/transition lengths.
+// Every default below reproduces the app's old fixed behaviour exactly, so
+// nothing changes for anyone until they open Settings.
 const SETTINGS_KEY = 'reach_settings_v1';
-const DEFAULT_SETTINGS = { beepVolume:100, ttsEnabled:false, voiceName:'', readySeconds:5, transitionSeconds:15 };
+const DEFAULT_SETTINGS = { beepVolume:100, readySeconds:5, transitionSeconds:15 };
 function loadSettings(){
   try{
     const stored = JSON.parse(localStorage.getItem(SETTINGS_KEY));
@@ -1466,36 +1459,10 @@ function applyThemeChoice(theme){
 document.getElementById('themeLightBtn').addEventListener('click', ()=> applyThemeChoice('light'));
 document.getElementById('themeDarkBtn').addEventListener('click', ()=> applyThemeChoice('dark'));
 
-// The list of installed voices comes from the device itself and can arrive
-// asynchronously (especially on first load), so this both populates it now
-// and re-populates whenever the browser reports the list has changed.
-function populateVoiceList(){
-  const select = document.getElementById('voiceSelect');
-  if(!select) return;
-  if(!('speechSynthesis' in window)){
-    select.innerHTML = '<option value="">Not supported on this device</option>';
-    select.disabled = true;
-    return;
-  }
-  const all = window.speechSynthesis.getVoices();
-  const english = all.filter(v => v.lang && v.lang.toLowerCase().startsWith('en'));
-  const list = (english.length ? english : all).slice().sort((a,b)=> a.name.localeCompare(b.name));
-  const current = settings.voiceName;
-  select.innerHTML = '<option value="">Default (device voice)</option>' +
-    list.map(v => `<option value="${v.name.replace(/"/g,'&quot;')}">${v.name}${v.lang ? ' — '+v.lang : ''}</option>`).join('');
-  select.value = list.some(v=>v.name===current) ? current : '';
-}
-if('speechSynthesis' in window){
-  window.speechSynthesis.onvoiceschanged = populateVoiceList;
-}
-populateVoiceList();
-
 function openSettingsSheet(){
   applyThemeChoice(currentTheme());
   document.getElementById('volumeSlider').value = settings.beepVolume;
   document.getElementById('volumeValue').textContent = settings.beepVolume===0 ? 'Muted' : settings.beepVolume + '%';
-  document.getElementById('ttsToggle').checked = settings.ttsEnabled;
-  populateVoiceList();
   document.getElementById('readySecondsInput').value = settings.readySeconds;
   document.getElementById('transitionSecondsInput').value = settings.transitionSeconds;
   document.getElementById('settingsSheet').classList.add('open');
@@ -1512,14 +1479,6 @@ document.getElementById('volumeSlider').addEventListener('input', (e)=>{
   settings.beepVolume = parseInt(e.target.value, 10);
   document.getElementById('volumeValue').textContent = settings.beepVolume===0 ? 'Muted' : settings.beepVolume + '%';
   applyBeepVolume();
-  saveSettings();
-});
-document.getElementById('ttsToggle').addEventListener('change', (e)=>{
-  settings.ttsEnabled = e.target.checked;
-  saveSettings();
-});
-document.getElementById('voiceSelect').addEventListener('change', (e)=>{
-  settings.voiceName = e.target.value;
   saveSettings();
 });
 document.getElementById('readySecondsInput').addEventListener('change', (e)=>{
@@ -2031,7 +1990,6 @@ function closePlayOverlay(){
   document.getElementById('playOverlay').classList.remove('open');
   clearInterval(tickTimer);
   endAudioSession();
-  try{ if('speechSynthesis' in window) window.speechSynthesis.cancel(); }catch(e){}
 }
 document.getElementById('exitPlayBtn').addEventListener('click', ()=>{
   // Once a session has finished naturally, there's nothing left to confirm —
@@ -2047,9 +2005,6 @@ function advanceSegment(){
     showComplete();
     return;
   }
-  // Stop the previous segment's interval right away. Without this, while we
-  // wait on speakStretchName below, the old interval keeps firing and quietly
-  // eats into the new segment's remainingMs before its own timer has "started."
   clearInterval(tickTimer);
   tickTimer = null;
   const seg = sequence[seqIndex];
@@ -2060,53 +2015,9 @@ function advanceSegment(){
   updateTimerDisplay(); // show the fresh duration right away, even before ticking starts
 
   if(!seg.ready && !seg.rest){
-    if(settings.ttsEnabled){
-      // 1. speak the stretch name, 2. starting drum, 3. timer starts — in that order.
-      speakStretchName(seg, ()=>{ playDrum(); startTicking(); });
-      return;
-    }
     playDrum(); // 1 drum: starts a stretch (also marks the end of a transition, if one preceded it)
   }
   startTicking();
-}
-
-// Announces the stretch (and which side, if any) before the starting drum,
-// so a session can be followed without looking at the phone. We don't rely on
-// the utterance's onend/onerror events to know when speech has finished —
-// iOS Safari can fire onend almost instantly (well before the voice actually
-// stops talking), which would let the drum and timer start too early. Instead
-// we estimate how long the phrase takes to speak from its length and always
-// wait that long, so the order (name, then drum, then timer) is deterministic
-// regardless of how reliable the device's speech events are.
-function speakStretchName(seg, then){
-  let done = false;
-  function finish(){
-    if(done) return;
-    done = true;
-    then();
-  }
-  try{
-    if(!('speechSynthesis' in window)){ finish(); return; }
-    window.speechSynthesis.cancel();
-    const text = seg.stretch.name + (seg.side ? ', ' + seg.side : '');
-    const utter = new SpeechSynthesisUtterance(text);
-    utter.rate = 1.0;
-    if(settings.voiceName){
-      const match = window.speechSynthesis.getVoices().find(v=>v.name===settings.voiceName);
-      if(match) utter.voice = match;
-    }
-    window.speechSynthesis.speak(utter);
-    // Deliberately not listening for onend/onerror to decide when to move on:
-    // both can fire almost instantly, well before the voice actually finishes
-    // (a documented iOS quirk, and also what happens in some browsers/test
-    // environments with no speech engine available at all). A fixed,
-    // text-length-based wait keeps the "name, then drum, then timer" order
-    // reliable everywhere instead of racing an unreliable event.
-    // ~150 words/minute at rate 1.0 is roughly 13 characters/sec including
-    // spaces; add a fixed pause so short names still get a natural beat.
-    const estimatedMs = Math.round((text.length / 13) * 1000) + 350;
-    setTimeout(finish, Math.max(estimatedMs, 900));
-  }catch(e){ finish(); }
 }
 
 function stretchCountLabel(){
@@ -2218,7 +2129,6 @@ document.getElementById('skipBackBtn').addEventListener('click', ()=>{
 function showComplete(){
   clearInterval(tickTimer);
   sessionComplete = true;
-  try{ if('speechSynthesis' in window) window.speechSynthesis.cancel(); }catch(e){}
   document.getElementById('progressText').textContent = 'Session complete';
   document.getElementById('playInfoBtn').style.display='none';
   document.getElementById('playControls').style.display='none';
