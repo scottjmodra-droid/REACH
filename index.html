@@ -66,6 +66,10 @@
         and starting a new one just kept showing the old "Nice reach" screen
         — added a proper "Finish" button and made the exit (✕) button clear
         a finished session too, instead of asking to confirm
+  v2.6  Shrunk the stretch pill further: dropped the redundant "both sides"
+        tag (the duration chips already say "/side"), keeping just "single
+        hold" for stretches that don't have a side, sized to fit the tighter
+        row
 -->
 <html lang="en">
 <head>
@@ -350,9 +354,10 @@
     color:var(--white);
   }
   .sides-tag{
-    font-size:11px;
+    font-size:10px;
     color:var(--ink-faint);
     margin-left:auto;
+    white-space:nowrap;
   }
 
   /* ---------- Session bar ---------- */
@@ -826,7 +831,7 @@
       </svg>
     </div>
     <h1>Reach</h1>
-    <span class="version-tag" id="versionTag">v2.5</span>
+    <span class="version-tag" id="versionTag">v2.6</span>
   </div>
 </header>
 
@@ -1132,7 +1137,7 @@ function renderCard(s){
         <h3 class="card-title"><span>${s.name}</span><span class="info-badge">i</span></h3>
         <div class="dur-row">
           ${chips}
-          ${s.sides ? '<span class="sides-tag">both sides</span>' : '<span class="sides-tag">single hold</span>'}
+          ${s.sides ? '' : '<span class="sides-tag">single hold</span>'}
         </div>
       </div>
       ${img ? `<img class="card-thumb-big" src="${img.thumb}" alt="">` : ''}
