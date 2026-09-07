@@ -32,6 +32,11 @@
         which would clip/crackle), so it's noticeably louder without turning
         harsh, plus a slightly higher starting pitch for more presence
         on phone speakers
+  v2.2  Made the session preview fully editable — change any stretch's
+        duration, remove one, or add another right there, with an "Add a
+        stretch" panel browsing everything not yet in the session. Removed
+        the old "Review" drawer/button from the build tab, since preview now
+        covers that
 -->
 <html lang="en">
 <head>
@@ -325,27 +330,6 @@
   }
   .session-bar button.play:disabled{opacity:.35;pointer-events:none;}
 
-  .session-drawer{
-    max-width:920px;
-    margin:0 auto;
-    padding:0 20px 14px;
-    display:none;
-  }
-  .session-drawer.open{display:block;}
-  .session-item{
-    display:flex;
-    align-items:center;
-    justify-content:space-between;
-    padding:9px 0;
-    border-top:1px solid rgba(255,255,255,0.12);
-    font-size:13.5px;
-  }
-  .session-item .dur{color:#B9C7AE;font-size:12.5px;margin-left:8px;}
-  .session-item button.remove{
-    background:none;border:none;color:#D9B8B0;
-    font-size:12.5px;font-weight:600;
-  }
-
   /* ---------- Playlists tab ---------- */
   .playlist-card{
     background:var(--paper);
@@ -468,14 +452,81 @@
   .preview-item{
     display:flex;
     justify-content:space-between;
-    align-items:center;
+    align-items:flex-start;
     gap:10px;
     padding:13px 0;
     border-top:1px solid var(--line);
   }
   .preview-item:first-child{border-top:none;}
   .preview-item .pi-name{font-size:14.5px;font-weight:600;color:var(--ink);}
-  .preview-item .pi-dur{font-size:12.5px;color:var(--ink-faint);margin-top:2px;}
+  .preview-item .pi-dur-row{
+    display:flex;
+    align-items:center;
+    flex-wrap:wrap;
+    gap:6px;
+    margin-top:8px;
+  }
+  .preview-item .pi-sides-tag{font-size:11px;color:var(--ink-faint);margin-left:2px;}
+  .preview-item button.pi-remove{
+    background:none;border:none;color:#A5493C;
+    font-size:12.5px;font-weight:600;
+    padding:4px 2px;flex-shrink:0;white-space:nowrap;
+  }
+
+  .preview-add-toggle{
+    display:block;
+    width:100%;
+    margin:16px 0 4px;
+    background:none;
+    border:1.5px dashed var(--sage);
+    color:var(--moss-dark);
+    padding:12px;
+    border-radius:12px;
+    font-size:13.5px;
+    font-weight:600;
+  }
+  .preview-add-panel{
+    margin-top:10px;
+    display:none;
+  }
+  .preview-add-panel.open{display:block;}
+  .preview-add-area{
+    font-size:11px;
+    text-transform:uppercase;
+    letter-spacing:.04em;
+    color:var(--ink-faint);
+    margin:14px 0 4px;
+    font-weight:700;
+  }
+  .preview-add-area:first-child{margin-top:6px;}
+  .preview-add-item{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:10px;
+    padding:9px 0;
+    border-top:1px solid var(--line);
+    font-size:13.5px;
+    color:var(--ink);
+  }
+  .preview-add-item:first-of-type{border-top:none;}
+  .preview-add-item button.add{
+    background:var(--sage-pale);
+    border:1px solid var(--line);
+    color:var(--moss-dark);
+    width:28px;height:28px;
+    border-radius:50%;
+    font-size:16px;
+    font-weight:700;
+    flex-shrink:0;
+    line-height:1;
+  }
+  .preview-empty{
+    text-align:center;
+    padding:40px 20px 20px;
+    color:var(--ink-faint);
+    font-size:14px;
+  }
   .preview-actions{
     position:fixed;left:0;right:0;bottom:0;
     background:var(--moss-deep);
@@ -491,6 +542,7 @@
     padding:14px;border-radius:26px;
     font-size:15px;font-weight:700;
   }
+  .preview-actions button.play-preview:disabled{opacity:.4;pointer-events:none;}
 
   /* ---------- Play overlay ---------- */
   .play-overlay{
@@ -656,7 +708,7 @@
       </svg>
     </div>
     <h1>Reach</h1>
-    <span class="version-tag" id="versionTag">v2.1</span>
+    <span class="version-tag" id="versionTag">v2.2</span>
   </div>
 </header>
 
@@ -669,7 +721,6 @@
 <main id="playlists-tab" style="display:none;"></main>
 
 <div class="session-bar" id="sessionBar" style="display:none;">
-  <div class="session-drawer" id="sessionDrawer"></div>
   <div class="save-panel" id="savePanel">
     <div class="box">
       <label>Playlist name</label>
@@ -683,7 +734,6 @@
       <div class="n" id="sessionTotal">0 min</div>
       <div class="sub" id="sessionSub">0 stretches selected</div>
     </div>
-    <button class="ghost" id="toggleDrawerBtn">Review</button>
     <button class="ghost" id="saveBtn">Save</button>
     <button class="play" id="playBtn">▶ Play</button>
   </div>
@@ -696,7 +746,11 @@
     <button class="close" id="closePreviewBtn">✕</button>
   </div>
   <div class="preview-total" id="previewTotal"></div>
-  <div class="preview-list" id="previewList"></div>
+  <div class="preview-list" id="previewList">
+    <div id="previewItemsList"></div>
+    <button class="preview-add-toggle" id="previewAddToggle">+ Add a stretch</button>
+    <div class="preview-add-panel" id="previewAddPanel"></div>
+  </div>
   <div class="preview-actions">
     <button class="play-preview" id="startPlayBtn">▶ Play</button>
   </div>
@@ -955,7 +1009,6 @@ function renderSessionBar(){
   const ids = Object.keys(selections);
   if(ids.length===0){
     bar.style.display='none';
-    document.getElementById('sessionDrawer').classList.remove('open');
     return;
   }
   bar.style.display='block';
@@ -963,29 +1016,7 @@ function renderSessionBar(){
   document.getElementById('sessionTotal').textContent = `${mins} min`;
   document.getElementById('sessionSub').textContent = `${ids.length} stretch${ids.length>1?'es':''} selected`;
   document.getElementById('playBtn').disabled = false;
-
-  const drawer = document.getElementById('sessionDrawer');
-  drawer.innerHTML = ids.map(id=>{
-    const s = STRETCHES.find(x=>x.id==id);
-    const min = selections[id];
-    const total = min * (s.sides?2:1);
-    return `<div class="session-item">
-      <span>${s.name}<span class="dur">${min} min${s.sides?'/side · '+total+' min total':''}</span></span>
-      <button class="remove" data-id="${id}">Remove</button>
-    </div>`;
-  }).join('');
-  drawer.querySelectorAll('.remove').forEach(btn=>{
-    btn.addEventListener('click', ()=>{
-      delete selections[btn.dataset.id];
-      renderBuildTab();
-      renderSessionBar();
-    });
-  });
 }
-
-document.getElementById('toggleDrawerBtn').addEventListener('click', ()=>{
-  document.getElementById('sessionDrawer').classList.toggle('open');
-});
 
 /* ============ TABS ============ */
 document.querySelectorAll('nav.tabs button').forEach(btn=>{
@@ -1015,7 +1046,6 @@ document.getElementById('saveBtn').addEventListener('click', ()=>{
   const input = document.getElementById('savePanelInput');
   input.value = `${sessionMinutes()} min`;
   panel.classList.add('open');
-  document.getElementById('sessionDrawer').classList.remove('open');
   input.focus();
   input.select();
 });
@@ -1318,36 +1348,110 @@ document.getElementById('playBtn').addEventListener('click', ()=>{
   openPreview(selections);
 });
 
-/* ============ SESSION PREVIEW ============ */
+/* ============ SESSION PREVIEW (fully editable) ============ */
+// This screen replaced the old "Review" drawer — it's now the one place to
+// fine-tune a session: change a duration, remove a stretch, or add another,
+// all before hitting Play.
 let previewItems = {};
+let previewAddOpen = false;
+
 function openPreview(items){
   previewItems = {...items};
-  selections = {...items};
-  renderBuildTab();
-  renderSessionBar();
-  renderPreviewList();
+  previewAddOpen = false;
+  syncSelectionsFromPreview();
   document.getElementById('previewOverlay').classList.add('open');
 }
 function closePreview(){
   document.getElementById('previewOverlay').classList.remove('open');
 }
+// Keep the build tab + session bar in sync with whatever is edited here, so
+// nothing looks stale if the user backs out of preview without playing.
+function syncSelectionsFromPreview(){
+  selections = {...previewItems};
+  renderBuildTab();
+  renderSessionBar();
+  renderPreviewList();
+}
+
 function renderPreviewList(){
   const ids = Object.keys(previewItems);
   const mins = sessionMinutesFor(previewItems);
-  document.getElementById('previewTotal').textContent =
-    `${mins} min · ${ids.length} stretch${ids.length===1?'':'es'}`;
-  document.getElementById('previewList').innerHTML = ids.map(id=>{
-    const s = STRETCHES.find(x=>x.id==id);
-    const min = previewItems[id];
-    const total = min*(s.sides?2:1);
-    return `<div class="preview-item">
-      <div>
-        <div class="pi-name">${s.name}</div>
-        <div class="pi-dur">${min} min${s.sides?'/side · '+total+' min total':' hold'}</div>
-      </div>
-    </div>`;
-  }).join('');
+  document.getElementById('previewTotal').textContent = ids.length
+    ? `${mins} min · ${ids.length} stretch${ids.length===1?'':'es'}`
+    : 'No stretches yet';
+
+  const itemsList = document.getElementById('previewItemsList');
+  if(ids.length===0){
+    itemsList.innerHTML = `<div class="preview-empty">Add a stretch below to build this session.</div>`;
+  } else {
+    itemsList.innerHTML = ids.map(id=>{
+      const s = STRETCHES.find(x=>x.id==id);
+      const min = previewItems[id];
+      const chips = DURATIONS.map(d=>{
+        const active = min===d ? 'active' : '';
+        return `<button class="dur-chip ${active}" data-id="${id}" data-min="${d}">${d} min${s.sides?'/side':''}</button>`;
+      }).join('');
+      return `<div class="preview-item">
+        <div>
+          <div class="pi-name">${s.name}</div>
+          <div class="pi-dur-row">
+            ${chips}
+            <span class="pi-sides-tag">${s.sides ? 'both sides' : 'single hold'}</span>
+          </div>
+        </div>
+        <button class="pi-remove" data-id="${id}">Remove</button>
+      </div>`;
+    }).join('');
+    itemsList.querySelectorAll('.dur-chip').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        previewItems[btn.dataset.id] = parseInt(btn.dataset.min, 10);
+        syncSelectionsFromPreview();
+      });
+    });
+    itemsList.querySelectorAll('.pi-remove').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        delete previewItems[btn.dataset.id];
+        syncSelectionsFromPreview();
+      });
+    });
+  }
+
+  document.getElementById('startPlayBtn').disabled = ids.length===0;
+  const addToggle = document.getElementById('previewAddToggle');
+  addToggle.textContent = previewAddOpen ? '– Hide stretch list' : '+ Add a stretch';
+  document.getElementById('previewAddPanel').classList.toggle('open', previewAddOpen);
+  if(previewAddOpen) renderPreviewAddPanel();
 }
+
+function renderPreviewAddPanel(){
+  const panel = document.getElementById('previewAddPanel');
+  const remaining = STRETCHES.filter(s=>!(s.id in previewItems));
+  if(remaining.length===0){
+    panel.innerHTML = `<div class="preview-empty">Every stretch is already in this session.</div>`;
+    return;
+  }
+  panel.innerHTML = AREA_ORDER.map(area=>{
+    const items = remaining.filter(s=>s.area===area);
+    if(!items.length) return '';
+    return `<div class="preview-add-area">${area}</div>` + items.map(s=>
+      `<div class="preview-add-item">
+        <span>${s.name}</span>
+        <button class="add" data-id="${s.id}" aria-label="Add">+</button>
+      </div>`
+    ).join('');
+  }).join('');
+  panel.querySelectorAll('button.add').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      previewItems[btn.dataset.id] = 1;
+      syncSelectionsFromPreview();
+    });
+  });
+}
+
+document.getElementById('previewAddToggle').addEventListener('click', ()=>{
+  previewAddOpen = !previewAddOpen;
+  renderPreviewList();
+});
 document.getElementById('closePreviewBtn').addEventListener('click', closePreview);
 document.getElementById('startPlayBtn').addEventListener('click', ()=> startPlayback(previewItems));
 
